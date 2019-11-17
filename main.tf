@@ -13,26 +13,6 @@ resource "google_container_cluster" "primary" {
     preemptible  = true # cheaper VMs with no availibility guarantee
     machine_type = "g1-small"
   }
-
-  master_auth {
-    username = "root"
-    password = "AaDISwficf9b5hfHxbUYln0JySF29Wdn"
-
-    client_certificate_config {
-      issue_client_certificate = false
-    }
-  }
-}
-
-output "endpoint" {
-  value = "${google_container_cluster.primary.endpoint}"
-}
-
-provider "kubernetes" {
-    host = "${google_container_cluster.primary.endpoint}"
-    username = "root"
-    password = "AaDISwficf9b5hfHxbUYln0JySF29Wdn"
-    cluster_ca_certificate = "${base64decode(google_container_cluster.primary.master_auth.0.cluster_ca_certificate)}"
 }
 
 resource "google_compute_disk" "default" {

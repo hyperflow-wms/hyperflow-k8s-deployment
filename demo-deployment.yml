@@ -24,6 +24,7 @@ spec:
           - name: my-pvc-nfs
             mountPath: "/opt/hfstorage"
       - image: redis/redis
+        name: redis
       volumes:
       - name: my-pvc-nfs
         persistentVolumeClaim:
