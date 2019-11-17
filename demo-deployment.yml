@@ -1,0 +1,30 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: demo-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: demo-deployment
+  template:
+    metadata:
+      labels:
+        name: demo-deployment
+    spec:
+      containers:
+      - image: koxu1996/hyperflow
+        imagePullPolicy: Always
+        command: ["sleep", "infinity"]
+        name: example
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: "/tmp/g_account.json"
+        volumeMounts:
+          - name: my-pvc-nfs
+            mountPath: "/opt/hfstorage"
+      - image: redis/redis
+      volumes:
+      - name: my-pvc-nfs
+        persistentVolumeClaim:
+          claimName: nfs
