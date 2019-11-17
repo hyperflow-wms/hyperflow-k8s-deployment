@@ -23,7 +23,7 @@ spec:
         volumeMounts:
           - name: my-pvc-nfs
             mountPath: "/opt/hfstorage"
-      - image: redis/redis
+      - image: redis
         name: redis
       volumes:
       - name: my-pvc-nfs
