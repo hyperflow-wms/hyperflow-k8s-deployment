@@ -22,6 +22,9 @@ spec:
             mountPath: "/opt/hfstorage"
       - image: redis
         name: redis
+        ports:
+          - name: redis
+            containerPort: 6379
       volumes:
       - name: my-pvc-nfs
         persistentVolumeClaim:
