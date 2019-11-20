@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nfs-server
@@ -24,11 +24,11 @@ spec:
             containerPort: 111
         securityContext:
           privileged: true
-        volumeMounts:
-          - mountPath: /exports
-            name: mypvc
-      volumes:
-        - name: mypvc
-          gcePersistentDisk:
-            pdName: hf-storage
-            fsType: ext4
+        # volumeMounts:
+        #   - mountPath: /exports
+        #     name: mypvc
+      # volumes:
+      #   - name: mypvc
+      #     gcePersistentDisk:
+      #       pdName: hf-storage
+      #       fsType: ext4

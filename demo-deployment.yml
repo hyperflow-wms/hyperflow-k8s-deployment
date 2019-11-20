@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: demo-deployment
@@ -17,9 +17,6 @@ spec:
         imagePullPolicy: Always
         command: ["sleep", "infinity"]
         name: example
-        env:
-        - name: GOOGLE_APPLICATION_CREDENTIALS
-          value: "/tmp/g_account.json"
         volumeMounts:
           - name: my-pvc-nfs
             mountPath: "/opt/hfstorage"
