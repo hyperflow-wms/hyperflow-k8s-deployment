@@ -1,19 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: demo-deployment
+  name: hyperflow-engine
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: demo-deployment
+      name: hyperflow-engine 
   template:
     metadata:
       labels:
-        name: demo-deployment
+        name: hyperflow-engine
     spec:
       containers:
       - image: koxu1996/hyperflow
+        env:
+          - name: REDIS_URL
+            value: redis://redis.default.svc.cluster.local:6379
         imagePullPolicy: Always
         command: ["sleep", "infinity"]
         name: example

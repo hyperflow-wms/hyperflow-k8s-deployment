@@ -22,7 +22,3 @@ spec:
   resources:
     requests:
       storage: 1Gi
-
-kubectl cp montage-workflow $(kubectl get pods --selector=name=demo-deployment -o name | cut -d '/' -fls2):montage-workflow
-kubectl cp montage-data $(kubectl get pods --selector=name=demo-deployment -o name | cut -d '/' -f2):/opt/hfstorage/
-$ kubectl exec $(kubectl get pods --selector=name=demo-deployment -o name | cut -d '/' -f2) -- bash -c "mv /opt/hfstorage/montage-data/* /opt/hfstorage"
