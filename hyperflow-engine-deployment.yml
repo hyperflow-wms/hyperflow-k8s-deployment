@@ -6,29 +6,65 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      name: hyperflow-engine 
+      name: hyperflow-engine
+      component: hyperflow-engine
   template:
     metadata:
       labels:
         name: hyperflow-engine
+        component: hyperflow-engine
     spec:
       containers:
-      - image: koxu1996/hyperflow
-        env:
-          - name: REDIS_URL
-            value: redis://redis.default.svc.cluster.local:6379
+      - name: hyperflow
+        image: hyperflowwms/hyperflow:v1.3.5
         imagePullPolicy: Always
-        command: ["sleep", "infinity"]
-        name: example
+        env:
+        - name: REDIS_URL
+          # Change that value to reflect your and namespace and cluster FQDN
+          value: redis://redis.default.svc.cluster.local:6379
+        - name: HF_VAR_function
+          # The source of this function can be found here
+          # https://github.com/hyperflow-wms/hyperflow/blob/master/functions/k8sCommand.js
+          value: "k8sCommand"
+        - name: HF_VAR_JOB_TEMPLATE_PATH
+          value: "/opt/hyperflow/job-template.yaml"
+        - name: HF_VAR_WORKER_CONTAINER
+          value: "hyperflowwms/montage-workflow-worker:v1.0.0"
+        - name: HF_VAR_WORK_DIR
+          value: "/work_dir"
+        - name: HF_DEBUG
+          value: "0"
+        command:
+          - "/bin/sh"
+          - "-c"
+          - >
+            echo "Hyperflow environmental variables:" ;
+            env | grep "HF_" ;
+            while ! [ -f /work_dir/workflow.json ]; do echo "Waiting for workflow.json to be mounted..." ; done ;
+            echo "Workflow data mounted: " ; ls -la /work_dir ;
+            if [ $HF_DEBUG -eq 0 ] ; then
+              cd /work_dir/ ;
+              echo "Running workflow:" ;
+              hflow run workflow.json ;
+            else
+              while true; do sleep 5 ; done ;
+            fi ;
         volumeMounts:
-          - name: my-pvc-nfs
-            mountPath: "/opt/hfstorage"
-      - image: redis
-        name: redis
+           - name: workflow-data
+             mountPath: "/work_dir:shared"
+           - name: config-map
+             mountPath: /opt/hyperflow/job-template.yaml
+             subPath: job-template.yaml
+             readOnly: true
+      - name: redis
+        image: redis:5.0.7-buster
         ports:
-          - name: redis
-            containerPort: 6379
+        - name: redis
+          containerPort: 6379
       volumes:
-      - name: my-pvc-nfs
+      - name: config-map
+        configMap:
+          name: hyperflow-config
+      - name: workflow-data
         persistentVolumeClaim:
           claimName: nfs
