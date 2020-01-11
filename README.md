@@ -38,7 +38,12 @@ server=/cluster.local/10.96.0.10
 server=8.8.8.8
 listen-address=127.0.0.1
 ```
-- Run this to add a line to `/etc/hosts`:
+- Run this to add an entry to `/etc/hosts`:
 ```
 echo "127.0.1.1 $HOSTNAME" >> /etc/hosts 
+```
+- Add these lines to `/etc/resolv.conf`:
+```
+search svc.cluster.local
+options ndots:5
 ```
