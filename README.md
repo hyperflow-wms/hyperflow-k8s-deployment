@@ -21,7 +21,7 @@ The default configuration runs a small Montage workflow. To change this, configu
 Coming soon...
 
 ## Configuring bare-metal Kubernetes installation
-To properly configure a bare-metal Kubernetes installation (e.g. minikube), you need to do the following steps (commands for Ubuntu 18.04).
+To properly configure a bare-metal Kubernetes installation (e.g. minikube) for a HyperFlow+nfs deployment, you need to do the following steps (commands for Ubuntu 18.04).
 
 ### Install packages
 ```
