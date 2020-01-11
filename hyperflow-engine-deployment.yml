@@ -46,6 +46,8 @@ spec:
               cd /work_dir/ ;
               echo "Running workflow:" ;
               hflow run workflow.json ;
+              echo "Workflow finished. Container is waiting for manual termination." ;
+              while true; do sleep 5 ; done ;
             else
               while true; do sleep 5 ; done ;
             fi ;
@@ -56,11 +58,6 @@ spec:
              mountPath: /opt/hyperflow/job-template.yaml
              subPath: job-template.yaml
              readOnly: true
-      - name: redis
-        image: redis:5.0.7-buster
-        ports:
-        - name: redis
-          containerPort: 6379
       volumes:
       - name: config-map
         configMap:
@@ -68,3 +65,4 @@ spec:
       - name: workflow-data
         persistentVolumeClaim:
           claimName: nfs
+
