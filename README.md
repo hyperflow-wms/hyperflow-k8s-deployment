@@ -45,5 +45,5 @@ echo "127.0.1.1 $HOSTNAME" >> /etc/hosts
 - Add these lines to `/etc/resolv.conf`:
 ```
 search svc.cluster.local
-options ndots:5
+options ndots:5 timeout:1
 ```
