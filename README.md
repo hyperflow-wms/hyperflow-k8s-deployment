@@ -18,6 +18,14 @@ kubectl apply -f hyperflow-engine-deployment.yml
 
 The default configuration runs a small Montage workflow. To change this, configure workflow *worker container* in `hyperflow-engine-deployment.yml` and *data container* in `nfs-server.yml`.
 
+## Granting HyperFlow permission to create jobs
+To allow the HyperFlow process to create new Pods, you need to grant admin access to its service account. For now the workaround is to grant super-user access to all service accounts cluster-wide: 
+```
+kubectl create clusterrolebinding serviceaccounts-cluster-admin \
+--clusterrole=cluster-admin \
+--group=system:serviceaccounts
+```
+
 ## Running without the data container
 Coming soon...
 
