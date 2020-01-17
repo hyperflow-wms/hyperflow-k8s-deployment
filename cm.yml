@@ -26,7 +26,7 @@ data:
                   workingDir: ${volumePath}
                   resources:
                     requests:
-                      cpu: "1m"
+                      cpu: ${cpuRequest}
                   volumeMounts:
                   - name: my-pvc-nfs
                     mountPath: ${volumePath}
