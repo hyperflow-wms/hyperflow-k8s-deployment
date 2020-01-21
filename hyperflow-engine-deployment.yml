@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: hyperflow
-        image: hyperflowwms/hyperflow:v1.3.8
+        image: hyperflowwms/hyperflow:v1.3.10
         imagePullPolicy: Always
         env:
         - name: REDIS_URL
