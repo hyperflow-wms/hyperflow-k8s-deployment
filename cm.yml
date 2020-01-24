@@ -14,10 +14,13 @@ data:
           spec:
             template:
               spec:
-                restartPolicy: Never
+                restartPolicy: OnFailure
                 containers:
                 - name: test
                   image: ${containerName}
+                  env:
+                  - name: HF_VAR_ENABLE_NETHOGS
+                    value: "1"
                   command:
                     - "/bin/sh"
                     - "-c"
@@ -36,4 +39,5 @@ data:
                 - name: my-pvc-nfs
                   persistentVolumeClaim:
                     claimName: nfs
+            backoffLimit: 2
                     
