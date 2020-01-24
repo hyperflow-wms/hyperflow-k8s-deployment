@@ -15,17 +15,16 @@ kubectl create clusterrolebinding serviceaccounts-cluster-admin \
 
 ### Creating Kubernetes resources
 Create Kubernetes resources as follows:
+
 ```
-kubectl apply -f cm.yml
-kubectl apply -f nfs-server-service.yml
-kubectl apply -f redis-service.yml
-kubectl apply -f redis.yml
-kubectl apply -f nfs-server.yml
-kubectl apply -f pv-pvc.yml
-kubectl apply -f hyperflow-engine-deployment.yml
+kubectl kustomize base | kubectl apply -f -
+```
+The default configuration (`base` folder) runs a small Montage workflow. To change this, configure workflow *worker container* in `base/hyperflow-engine-deployment.yml` and *data container* in `base/nfs-server.yml`, or use prepared [kustomize](https://github.com/kubernetes-sigs/kustomize) overlays as follows:
+
+```
+kubectl kustomize overlays/soykb | kubectl apply -f -
 ```
 
-The default configuration runs a small Montage workflow. To change this, configure workflow *worker container* in `hyperflow-engine-deployment.yml` and *data container* in `nfs-server.yml`.
 
 ## Running without the data container
 Coming soon...
@@ -57,3 +56,4 @@ echo "127.0.1.1 $HOSTNAME" >> /etc/hosts
 search svc.cluster.local
 options ndots:5 timeout:1
 ```
+
