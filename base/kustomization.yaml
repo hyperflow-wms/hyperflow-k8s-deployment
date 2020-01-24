@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- redis.yml
+- redis-service.yml
+- hyperflow-engine-deployment.yml
+- nfs-server.yml
+- nfs-server-service.yml
+- cm.yml
+- pv-pvc.yml

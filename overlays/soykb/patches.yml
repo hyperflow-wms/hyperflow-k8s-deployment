@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-server
+spec:
+  template:
+    spec:
+      containers:
+      - name: workflow-data
+        image: hyperflowwms/soykb-workflow-data:hyperflow-soykb-example-f6f69d6ca3ebd9fe2458804b59b4ef71
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hyperflow-engine
+spec:
+  template:
+    spec:
+      containers:
+      - name: hyperflow
+        env:
+        - name: HF_VAR_WORKER_CONTAINER
+          value: "hyperflowwms/soykb-workflow-worker:v1.0.6"
