@@ -25,7 +25,9 @@ data:
                     - "/bin/sh"
                     - "-c"
                     - >
+                      cat /proc/net/dev ;
                       ${command};
+                      cat /proc/net/dev ;
                   workingDir: ${volumePath}
                   resources:
                     requests:
