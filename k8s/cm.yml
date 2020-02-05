@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    name: hyperflow-engine
+    component: hyperflow-engine
+  name: hyperflow-config
+data:
+  job-template.yaml: |-
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: job${jobName}
+          spec:
+            template:
+              spec:
+                restartPolicy: OnFailure
+                containers:
+                - name: test
+                  image: ${containerName}
+                  env:
+                  - name: HF_VAR_ENABLE_NETHOGS
+                    value: "1"
+                  command:
+                    - "/bin/sh"
+                    - "-c"
+                    - >
+                      ${command};
+                  workingDir: ${volumePath}
+                  resources:
+                    requests:
+                      cpu: ${cpuRequest}
+                  volumeMounts:
+                  - name: my-pvc-nfs
+                    mountPath: ${volumePath}
+                volumes:
+                - name: workflow-data
+                  emptyDir: {}
+                - name: my-pvc-nfs
+                  persistentVolumeClaim:
+                    claimName: nfs
+            backoffLimit: 2
+                    
