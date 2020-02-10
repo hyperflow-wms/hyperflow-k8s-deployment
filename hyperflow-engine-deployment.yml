@@ -29,7 +29,7 @@ spec:
         - name: HF_VAR_JOB_TEMPLATE_PATH
           value: "/opt/hyperflow/job-template.yaml"
         - name: HF_VAR_WORKER_CONTAINER
-          value: "hyperflowwms/montage-workflow-worker:v1.0.0"
+          value: "hyperflowwms/montage-workflow-worker:v1.0.7"
         - name: HF_VAR_WORK_DIR
           value: "/work_dir"
         - name: HF_VAR_DEBUG
