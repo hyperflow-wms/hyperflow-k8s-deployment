@@ -32,7 +32,7 @@ spec:
           value: "hyperflowwms/montage-workflow-worker:v1.0.0"
         - name: HF_VAR_WORK_DIR
           value: "/work_dir"
-        - name: HF_DEBUG
+        - name: HF_VAR_DEBUG
           value: "0"
         command:
           - "/bin/sh"
