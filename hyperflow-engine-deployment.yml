@@ -34,6 +34,8 @@ spec:
           value: "/work_dir"
         - name: HF_VAR_DEBUG
           value: "0"
+        - name: HF_VAR_BACKOFF_LIMIT
+          value: "0"
         - name: HF_VAR_NAMESPACE
           valueFrom:
             fieldRef:
