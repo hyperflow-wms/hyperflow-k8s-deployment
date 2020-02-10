@@ -25,7 +25,8 @@ data:
                     - "/bin/sh"
                     - "-c"
                     - >
-                      ${command};
+                      ${command}; exitCode=$? ;
+                      if [ $exitCode -ne 0 ]; then echo "Command ${command} returned exit code. $exitCode. Job fails." ; exit 1 ; fi ;
                   workingDir: ${volumePath}
                   resources:
                     requests:
