@@ -30,6 +30,7 @@ data:
                   resources:
                     requests:
                       cpu: ${cpuRequest}
+                      mem: ${memRequest}
                   volumeMounts:
                   - name: my-pvc-nfs
                     mountPath: ${volumePath}
