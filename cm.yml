@@ -14,7 +14,7 @@ data:
           spec:
             template:
               spec:
-                restartPolicy: OnFailure
+                restartPolicy: Never
                 containers:
                 - name: test
                   image: ${containerName}
@@ -45,5 +45,3 @@ data:
                 - name: my-pvc-nfs
                   persistentVolumeClaim:
                     claimName: nfs
-            backoffLimit: 2
-                    
