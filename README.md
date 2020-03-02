@@ -29,7 +29,7 @@ kubectl apply -f hyperflow-engine-deployment.yml
 The default configuration runs a small Montage workflow. To change this, configure workflow *worker container* in `hyperflow-engine-deployment.yml` and *data container* in `nfs-server.yml`.
 
 ### Running without the data container
-Coming soon...
+If you do not have a data container, you can set up a container that downloads the data before running the workflow. More instructions coming soon...
 
 ## Using Google Kubernetes Engine
 
