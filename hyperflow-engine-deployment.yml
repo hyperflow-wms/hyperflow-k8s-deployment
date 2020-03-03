@@ -48,7 +48,7 @@ spec:
             env | grep "HF_" ;
             while ! [ -f /work_dir/workflow.json ]; do echo "Waiting for workflow.json to be mounted..." ; done ;
             echo "Workflow data mounted: " ; ls -la /work_dir ;
-            if [ $HF_DEBUG -eq 0 ] ; then
+            if [ $HF_VAR_DEBUG -eq 0 ] ; then
               cd /work_dir/ ;
               echo "Running workflow:" ;
               hflow run workflow.json ;
