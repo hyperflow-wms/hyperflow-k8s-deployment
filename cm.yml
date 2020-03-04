@@ -23,6 +23,8 @@ data:
                       value: "1"
                     - name: HF_VAR_WORK_DIR
                       value: "${volumePath}"
+                    - name: HF_VAR_WAIT_FOR_INPUT_FILES
+                      value: "0"
                     - name: HF_VAR_NUM_RETRIES
                       value: "1"
                   command:
