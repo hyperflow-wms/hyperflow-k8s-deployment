@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: hyperflow
-        image: hyperflowwms/hyperflow:v1.3.17
+        image: hyperflowwms/hyperflow:v1.3.23
         imagePullPolicy: Always
         env:
         - name: REDIS_URL
@@ -29,7 +29,8 @@ spec:
         - name: HF_VAR_JOB_TEMPLATE_PATH
           value: "/opt/hyperflow/job-template.yaml"
         - name: HF_VAR_WORKER_CONTAINER
-          value: "hyperflowwms/montage-workflow-worker:v1.0.7"
+          value: "hyperflowwms/soykb-workflow-worker:v1.0.10-1-g95b7caf"
+          #value: "hyperflowwms/montage-workflow-worker:v1.0.9-1-gd61c86c"
         - name: HF_VAR_WORK_DIR
           value: "/work_dir"
         - name: HF_VAR_DEBUG
