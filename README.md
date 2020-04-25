@@ -14,6 +14,8 @@ kubectl create clusterrolebinding serviceaccounts-cluster-admin \
 --group=system:serviceaccounts
 ```
 
+or simply load `kubectl apply -f crb.yml`
+
 ### Creating Kubernetes resources
 Create Kubernetes resources as follows:
 ```
