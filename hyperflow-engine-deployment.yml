@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: hyperflow
-        image: hyperflowwms/hyperflow:v1.3.23
+        image: hyperflowwms/hyperflow:v1.3.25
         imagePullPolicy: Always
         env:
         - name: REDIS_URL
@@ -53,6 +53,13 @@ spec:
               cd /work_dir/ ;
               echo "Running workflow:" ;
               hflow run workflow.json ;
+              if [ -d /work_dir/logs-hf ] ; then
+                hflow-info /work_dir/workflow.json --print -f /work_dir > /work_dir/logs-hf/file_sizes.log 2>&1 ;
+                cat /work_dir/logs-hf/file_sizes.log ;
+                echo 1 > /work_dir/postprocStart ;
+              else
+                echo "Hyperflow logs not collected. Something must have gone wrong!"
+              fi ;
               echo "Workflow finished. Container is waiting for manual termination." ;
               while true; do sleep 5 ; done ;
             else
