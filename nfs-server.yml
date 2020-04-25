@@ -38,8 +38,8 @@ spec:
           - name: workflow-data
             mountPath: "/workflow-data:shared"
       - name: workflow-data
-        image: hyperflowwms/soykb-workflow-data:hyperflow-soykb-example-f6f69d6ca3ebd9fe2458804b59b4ef71
-        #image: hyperflowwms/montage-workflow-data:montage0.25-bf0b1b4450c201ee5f549c7f473d2ef0
+        # image: hyperflowwms/soykb-workflow-data:hyperflow-soykb-example-f6f69d6ca3ebd9fe2458804b59b4ef71
+        image: hyperflowwms/montage-workflow-data:montage0.25-bf0b1b4450c201ee5f549c7f473d2ef0
         imagePullPolicy: Always
         command:
           - "/bin/sh"
