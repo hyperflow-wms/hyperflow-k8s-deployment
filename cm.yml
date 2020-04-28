@@ -27,11 +27,20 @@ data:
                       value: "0"
                     - name: HF_VAR_NUM_RETRIES
                       value: "1"
+                    - name: HF_FS_MONIT_ENABLED
+                      value: "1"
+                    - name: HF_FS_MONIT_COMMAND
+                      value: "${command}"
+                    - name: HF_FS_MONIT_LOGFILE
+                      value: "/fbam/file_access.log"
+                    - name: HF_FS_MONIT_PATH_FILTER
+                      value: "${volumePath}"
                   command:
                     - "/bin/sh"
                     - "-c"
                     - >
-                      ${command}; exitCode=$? ;
+                      if [ $HF_FS_MONIT_ENABLED -eq 1 ]; then touch $HF_FS_MONIT_ENABLED ; LD_PRELOAD=/fbam/libfbam.so ${command}; exitCode=$? ; fi ;
+                      if [ $HF_FS_MONIT_ENABLED -eq 0 ]; then ${command}; exitCode=$? ; fi ;
                       if [ $exitCode -ne 0 ]; then echo "Command ${command} returned exit code. $exitCode. Job fails." ; exit 1 ; fi ;
                   workingDir: ${volumePath}
                   resources:
