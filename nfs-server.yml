@@ -13,56 +13,56 @@ spec:
         role: nfs-server
     spec:
       containers:
-      - name: nfs-server
+      - command:
+        - /bin/bash
+        - -c
+        - 'while [ ! -d /workflow-data ] ; do "Waiting for /workflow-data to created"
+          ; sleep 1 ; done ;  while [ -z "$(ls -A /workflow-data)" ]; do echo "Waiting
+          for /workflow-data to be mounted" ; sleep 1 ; done ; echo "Copying content
+          /workflow-data to /exports" ; cp -vr  /workflow-data/* /exports/ ; /usr/local/bin/run_nfs.sh
+          /exports / ;
+
+          '
         image: gcr.io/google_containers/volume-nfs:0.8
-        # As a workaround we copy data from the data container to the nfs /exports directory before running 
-        command:
-          - "/bin/bash"
-          - "-c"
-          - >
-            while [ ! -d /workflow-data ] ; do "Waiting for /workflow-data to created" ; sleep 1 ; done ; 
-            while [ -z "$(ls -A /workflow-data)" ]; do echo "Waiting for /workflow-data to be mounted" ; sleep 1 ; done ;
-            echo "Copying content /workflow-data to /exports" ;
-            cp -vr  /workflow-data/* /exports/ ;
-            /usr/local/bin/run_nfs.sh /exports / ;
+        name: nfs-server
         ports:
-          - name: nfs
-            containerPort: 2049
-          - name: mountd
-            containerPort: 20048
-          - name: rpcbind
-            containerPort: 111
+        - containerPort: 2049
+          name: nfs
+        - containerPort: 20048
+          name: mountd
+        - containerPort: 111
+          name: rpcbind
         securityContext:
           privileged: true
         volumeMounts:
-          - name: workflow-data
-            mountPath: "/workflow-data:shared"
-      - name: workflow-data
-        # image: hyperflowwms/soykb-workflow-data:hyperflow-soykb-example-f6f69d6ca3ebd9fe2458804b59b4ef71
-        image: hyperflowwms/montage-workflow-data:montage0.25-bf0b1b4450c201ee5f549c7f473d2ef0
+        - mountPath: /workflow-data:shared
+          name: workflow-data
+      - command:
+        - /bin/sh
+        - -c
+        - 'mount -o bind /data /workflow-data ; sleep 3600000 ;
+
+          '
+        image: matplinta/montage-workflow-data:montage0.25-v2
         imagePullPolicy: Always
-        command:
-          - "/bin/sh"
-          - "-c"
-          - >
-            mount -o bind /data /workflow-data ;
-            sleep 3600000 ;
-        securityContext:
-          privileged: true
-          capabilities:
-            add:
-              - SYS_ADMIN
         lifecycle:
           preStop:
             exec:
               command:
-                - "sh"
-                - "-c"
-                - >
-                  umount -fl /workflow-data;
+              - sh
+              - -c
+              - 'umount -fl /workflow-data;
+
+                '
+        name: workflow-data
+        securityContext:
+          capabilities:
+            add:
+            - SYS_ADMIN
+          privileged: true
         volumeMounts:
-          - mountPath: /workflow-data:shared
-            name: workflow-data
+        - mountPath: /workflow-data:shared
+          name: workflow-data
       volumes:
-      - name: workflow-data
-        emptyDir: {}
+      - emptyDir: {}
+        name: workflow-data
