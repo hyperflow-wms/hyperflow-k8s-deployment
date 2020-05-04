@@ -25,8 +25,9 @@ spec:
             echo "postprocStart flag mounted: " ; 
             ls -la /work_dir ;
             mkdir -p /work_dir/parsed ;
-            python3 /parser.py -s /work_dir/logs-hf -d /work_dir/parsed -f /work_dir/logs-hf ;
-            tar cvfz /work_dir/logs-hf.tar.gz /work_dir/logs-hf/ ;
+            python3 /parser.py -s /work_dir/logs-hf -d /work_dir/parsed -w /work_dir/workflow.json ;
+            cd /work_dir ;
+            tar cvfz logs-hf.tar.gz logs-hf/ ;
         volumeMounts:
            - name: workflow-data
              mountPath: "/work_dir:shared"
