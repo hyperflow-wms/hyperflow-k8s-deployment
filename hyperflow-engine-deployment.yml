@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: hyperflow
-        image: hyperflowwms/hyperflow:v1.3.28
+        image: hyperflowwms/hyperflow:v1.3.30
         imagePullPolicy: Always
         env:
         - name: REDIS_URL
@@ -53,7 +53,7 @@ spec:
             echo "Workflow data mounted: " ; ls -la /work_dir ;
             if [ $HF_VAR_DEBUG -eq 0 ] ; then
               cd /work_dir/ ;
-              mkdir logs-hf ;
+              mkdir -p logs-hf ;
               echo "Running workflow:" ;
               hflow run workflow.json ;
               if [ "$(ls -A /work_dir/logs-hf)" ]; then
