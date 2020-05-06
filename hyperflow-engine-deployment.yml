@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: hyperflow
-        image: hyperflowwms/hyperflow:v1.3.28
+        image: hyperflowwms/hyperflow:v1.3.30
         imagePullPolicy: Always
         env:
         - name: REDIS_URL
@@ -31,13 +31,15 @@ spec:
         - name: HF_VAR_WORKER_CONTAINER
           # value: "hyperflowwms/soykb-workflow-worker:v1.0.10-1-g95b7caf"
           # value: "cano601/soykb-workflow:latest" # SoyKB with file block access monitoring
-          value: "hyperflowwms/montage-workflow-worker:v1.0.10"
+          value: "matplinta/montage-workflow-worker:exec1.0.13"
         - name: HF_VAR_WORK_DIR
           value: "/work_dir"
         - name: HF_VAR_DEBUG
           value: "0"
         - name: HF_VAR_BACKOFF_LIMIT
           value: "0"
+        - name: HF_VAR_STOP_WORKFLOW_WHEN_JOB_FAILED
+          value: "1"
         - name: HF_VAR_NAMESPACE
           valueFrom:
             fieldRef:
@@ -52,11 +54,10 @@ spec:
             echo "Workflow data mounted: " ; ls -la /work_dir ;
             if [ $HF_VAR_DEBUG -eq 0 ] ; then
               cd /work_dir/ ;
+              mkdir -p logs-hf ;
               echo "Running workflow:" ;
               hflow run workflow.json ;
-              if [ -d /work_dir/logs-hf ] ; then
-                hflow-info /work_dir/workflow.json --print -f /work_dir > /work_dir/logs-hf/file_sizes.log 2>&1 ;
-                cat /work_dir/logs-hf/file_sizes.log ;
+              if [ "$(ls -A /work_dir/logs-hf)" ]; then
                 echo 1 > /work_dir/postprocStart ;
               else
                 echo "Hyperflow logs not collected. Something must have gone wrong!"
