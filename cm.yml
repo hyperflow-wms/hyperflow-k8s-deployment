@@ -27,23 +27,23 @@ data:
                       value: "0"
                     - name: HF_VAR_NUM_RETRIES
                       value: "1"
-                    - name: MY_NODE_NAME
+                    - name: HF_LOG_NODE_NAME
                       valueFrom:
                         fieldRef:
                           fieldPath: spec.nodeName
-                    - name: MY_POD_NAME
+                    - name: HF_LOG_POD_NAME
                       valueFrom:
                         fieldRef:
                           fieldPath: metadata.name
-                    - name: MY_POD_NAMESPACE
+                    - name: HF_LOG_POD_NAMESPACE
                       valueFrom:
                         fieldRef:
                           fieldPath: metadata.namespace
-                    - name: MY_POD_IP
+                    - name: HF_LOG_POD_IP
                       valueFrom:
                         fieldRef:
                           fieldPath: status.podIP
-                    - name: MY_POD_SERVICE_ACCOUNT
+                    - name: HF_LOG_POD_SERVICE_ACCOUNT
                       valueFrom:
                         fieldRef:
                           fieldPath: spec.serviceAccountName
