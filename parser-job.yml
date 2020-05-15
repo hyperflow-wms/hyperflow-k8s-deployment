@@ -27,6 +27,7 @@ spec:
             mkdir -p /work_dir/parsed ;
             python3 /parser.py -s /work_dir/logs-hf -d /work_dir/parsed -w /work_dir/workflow.json ;
             cd /work_dir ;
+            echo 1 > /work_dir/parsingFinished
             tar cvfz logs-hf.tar.gz logs-hf/ ;
         volumeMounts:
            - name: workflow-data
