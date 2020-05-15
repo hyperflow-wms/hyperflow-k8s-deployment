@@ -74,6 +74,23 @@ spec:
              mountPath: /opt/hyperflow/job-template.yaml
              subPath: job-template.yaml
              readOnly: true
+      - name: hflow-tools
+        image: matplinta/hflow-tools:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 0 
+        command:
+          - "/bin/bash" 
+          - "-c"
+          - >
+            while ! [ -f /work_dir/postprocStart ]; do echo "Waiting for postprocStart flag to be mounted..." ; sleep 5 ; done ;
+            echo "postprocStart flag mounted: " ; 
+            ls -la /work_dir ;
+            while true; do sleep 5 ; done ;
+        volumeMounts:
+           - name: workflow-data
+             mountPath: "/work_dir:shared"
       volumes:
       - name: config-map
         configMap:
@@ -81,4 +98,5 @@ spec:
       - name: workflow-data
         persistentVolumeClaim:
           claimName: nfs
+    
 
