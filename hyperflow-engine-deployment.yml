@@ -84,9 +84,12 @@ spec:
           - "/bin/bash" 
           - "-c"
           - >
-            while ! [ -f /work_dir/postprocStart ]; do echo "Waiting for postprocStart flag to be mounted..." ; sleep 5 ; done ;
-            echo "postprocStart flag mounted: " ; 
-            ls -la /work_dir ;
+            while ! [ -f /work_dir/parsingFinished ]; do echo "Waiting for parsingFinished flag to be mounted..." ; sleep 5 ; done ;
+            echo "parsingFinished flag mounted: " ; 
+            ls -la /work_dir/parsingFinished ;
+            cd /work_dir/parsed/*/ ;
+            sudo chmod -R 777 . ;
+            hflow-viz-trace -s . ;
             while true; do sleep 5 ; done ;
         volumeMounts:
            - name: workflow-data
