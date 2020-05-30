@@ -30,8 +30,10 @@ spec:
             echo 1 > /work_dir/parsingFinished
             tar cvfz logs-hf.tar.gz logs-hf/ ;
         volumeMounts:
-           - name: workflow-data
-             mountPath: "/work_dir:shared"
+          - name: workflow-data
+            mountPath: "/work_dir:shared"
+      nodeSelector:
+        nodetype: worker   
       volumes:
       - name: workflow-data
         persistentVolumeClaim:

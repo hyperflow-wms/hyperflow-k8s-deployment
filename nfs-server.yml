@@ -38,8 +38,10 @@ spec:
           - name: workflow-data
             mountPath: "/workflow-data:shared"
       - name: workflow-data
-        # image: hyperflowwms/soykb-workflow-data:hyperflow-soykb-example-f6f69d6ca3ebd9fe2458804b59b4ef71
-        image: matplinta/montage-workflow-data:montage0.25-v2
+        #image: hyperflowwms/soykb-workflow-data:hyperflow-soykb-example-f6f69d6ca3ebd9fe2458804b59b4ef71
+        #image: matplinta/montage-workflow-data:degree0.25
+        #image: matplinta/montage2-workflow-data:degree1.0
+        image: matplinta/montage2-workflow-data:degree0.25
         imagePullPolicy: Always
         command:
           - "/bin/sh"
@@ -63,6 +65,8 @@ spec:
         volumeMounts:
           - mountPath: /workflow-data:shared
             name: workflow-data
+      nodeSelector:
+        nodetype: hfmaster
       volumes:
       - name: workflow-data
         emptyDir: {}

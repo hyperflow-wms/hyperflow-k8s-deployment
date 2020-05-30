@@ -18,3 +18,5 @@ spec:
         ports:
         - name: redis
           containerPort: 6379
+      nodeSelector:
+        nodetype: hfmaster

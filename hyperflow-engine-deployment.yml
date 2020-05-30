@@ -16,22 +16,30 @@ spec:
     spec:
       containers:
       - name: hyperflow
-        image: hyperflowwms/hyperflow:v1.3.30
+        image: hyperflowwms/hyperflow:v1.3.36
         imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 1.5
+            memory: "2000Mi"
+          limits:
+            cpu: 2.5
+            memory: "5000Mi"
         env:
         - name: REDIS_URL
           # Change that value to reflect your and namespace and cluster FQDN
           value: redis://redis.default.svc.cluster.local:6379
         - name: HF_VAR_function
           # The source of this function can be found here
-          # https://github.com/hyperflow-wms/hyperflow/blob/master/functions/k8sCommand.js
+          # https://github.com/hyperflow-wms/hyperflow/blob/master/functions/kubernetes/k8sCommand.js
           value: "k8sCommand"
         - name: HF_VAR_JOB_TEMPLATE_PATH
           value: "/opt/hyperflow/job-template.yaml"
         - name: HF_VAR_WORKER_CONTAINER
-          # value: "hyperflowwms/soykb-workflow-worker:v1.0.10-1-g95b7caf"
-          # value: "cano601/soykb-workflow:latest" # SoyKB with file block access monitoring
-          value: "matplinta/montage-workflow-worker:exec1.0.13"
+          #value: "hyperflowwms/soykb-workflow-worker:v1.0.10-1-g95b7caf"
+          #value: "cano601/soykb-workflow:latest" # SoyKB with file block access monitoring
+          #value: "matplinta/montage-workflow-worker:exec1.0.13"
+          value: "hyperflowwms/montage2-worker:je-v1.0.16"
         - name: HF_VAR_WORK_DIR
           value: "/work_dir"
         - name: HF_VAR_DEBUG
@@ -40,6 +48,10 @@ spec:
           value: "0"
         - name: HF_VAR_STOP_WORKFLOW_WHEN_JOB_FAILED
           value: "1"
+        - name: HF_VAR_CPU_REQUEST
+          value: "0.7"
+        - name: HF_VAR_MEM_REQUEST
+          value: "500Mi"
         - name: HF_VAR_NAMESPACE
           valueFrom:
             fieldRef:
@@ -94,6 +106,8 @@ spec:
         volumeMounts:
            - name: workflow-data
              mountPath: "/work_dir:shared"
+      nodeSelector:
+        nodetype: hfmaster
       volumes:
       - name: config-map
         configMap:
@@ -101,5 +115,3 @@ spec:
       - name: workflow-data
         persistentVolumeClaim:
           claimName: nfs
-    
-
