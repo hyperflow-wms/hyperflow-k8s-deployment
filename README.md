@@ -84,3 +84,9 @@ echo "127.0.1.1 $HOSTNAME" >> /etc/hosts
 search svc.cluster.local
 options ndots:5 timeout:1
 ```
+## Processing logs
+After the workflow has finished, you can process its logs by starting the following Kubernetes job:
+```
+kubectl apply -f parser.job.yml
+```
+This will create a number of `jsonl` (JSON lines format) files in a directory `/work_dir/parsed/*`. The structure of these files is documented [here](https://github.com/hyperflow-wms/log-parser). 
