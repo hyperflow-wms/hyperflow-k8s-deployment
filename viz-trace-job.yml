@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: viz-exec-trace
+spec:
+  template:
+    metadata:
+      labels:
+        name: viz-exec-trace
+        component: viz-exec-trace
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
+      containers:
+      - name: parser
+        image: hyperflowwms/hflow-tools:v1.2.0
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 0 
+        command:
+          - "/bin/sh" 
+          - "-c"
+          - >
+            if ! [ -d /work_dir/parsed ] ; then 
+              echo "Nothing to process, exiting." ;
+              exit 0 ;
+            fi ;
+            for dir in `ls -d /work_dir/parsed/*/` ; do 
+              echo "viz-trace: processing $dir ..." ;
+              cd $dir
+              hflow-viz-trace -s . ;
+            done ;
+        volumeMounts:
+           - name: workflow-data
+             mountPath: "/work_dir:shared"
+      volumes:
+      - name: workflow-data
+        persistentVolumeClaim:
+          claimName: nfs
