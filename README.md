@@ -87,6 +87,11 @@ options ndots:5 timeout:1
 ## Processing logs
 After the workflow has finished, you can process its logs by starting the following Kubernetes job:
 ```
-kubectl apply -f parser.job.yml
+kubectl apply -f parser-job.yml
 ```
 This will create a number of `jsonl` (JSON lines format) files in a directory `/work_dir/parsed/*`. The structure of these files is documented [here](https://github.com/hyperflow-wms/log-parser). 
+
+## Visualization of workflow execution trace
+To generate a visualization of the workflow execution, first you need to generate the processed logs (see above), then run this Kubernetes job:
+```
+kubectl apply -f viz-trace-job.yml
