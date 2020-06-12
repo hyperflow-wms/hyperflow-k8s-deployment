@@ -15,8 +15,11 @@ spec:
         fsGroup: 0
       containers:
       - name: parser
-        image: hyperflowwms/hflow-tools:v1.2.0
+        image: hyperflowwms/hflow-tools:v1.2.1
         imagePullPolicy: Always
+        env:
+        - name: HF_VAR_DEBUG
+          value: "0"
         resources:
           requests:
             cpu: 0 
@@ -24,15 +27,19 @@ spec:
           - "/bin/sh" 
           - "-c"
           - >
-            if ! [ -d /work_dir/parsed ] ; then 
-              echo "Nothing to process, exiting." ;
-              exit 0 ;
+            if [ $HF_VAR_DEBUG -eq 1 ] ; then
+              while true; do sleep 5 ; done ;
+            else
+              if ! [ -d /work_dir/parsed ] ; then 
+                echo "Nothing to process, exiting." ;
+                exit 0 ;
+              fi ;
+              for dir in `ls -d /work_dir/parsed/*/` ; do 
+                echo "viz-trace: processing $dir ..." ;
+                cd $dir
+                hflow-viz-trace -s . ;
+              done ;
             fi ;
-            for dir in `ls -d /work_dir/parsed/*/` ; do 
-              echo "viz-trace: processing $dir ..." ;
-              cd $dir
-              hflow-viz-trace -s . ;
-            done ;
         volumeMounts:
            - name: workflow-data
              mountPath: "/work_dir:shared"
