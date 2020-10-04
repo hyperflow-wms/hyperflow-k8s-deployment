@@ -50,7 +50,7 @@ data:
                     - name: HF_VAR_FS_MONIT_ENABLED
                       value: "0"
                     - name: HF_VAR_FS_MONIT_COMMAND
-                      value: "${command}"
+                      value: '${command}'
                     - name: HF_VAR_FS_MONIT_PATH_PATTERN
                       value: "${volumePath}/*"
                   command:
