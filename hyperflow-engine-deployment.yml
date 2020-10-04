@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: hyperflow
-        image: hyperflowwms/hyperflow:v1.3.36
+        image: hyperflowwms/hyperflow:v1.4.3
         imagePullPolicy: Always
         resources:
           requests:
