@@ -15,7 +15,7 @@ spec:
         fsGroup: 0
       containers:
       - name: parser
-        image: hyperflowwms/hflow-tools:v1.2.1
+        image: hyperflowwms/viz-trace:v1.0.0
         imagePullPolicy: Always
         env:
         - name: HF_VAR_DEBUG
