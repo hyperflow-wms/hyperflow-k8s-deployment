@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: hyperflow
-        image: hyperflowwms/hyperflow:v1.3.30
+        image: hyperflowwms/hyperflow:v1.4.3
         imagePullPolicy: Always
         env:
         - name: REDIS_URL
@@ -30,12 +30,13 @@ spec:
           value: "/opt/hyperflow/job-template.yaml"
         - name: HF_VAR_WORKER_CONTAINER
           # value: "hyperflowwms/soykb-workflow-worker:v1.0.10-1-g95b7caf"
-          # value: "cano601/soykb-workflow:latest" # SoyKB with file block access monitoring
-          value: "matplinta/montage-workflow-worker:exec1.0.13"
+          #value: "cano601/soykb-workflow:latest" # SoyKB with file block access monitoring
+          #value: "matplinta/montage-workflow-worker:exec1.0.13"
+          value: "hyperflowwms/montage2-worker:je-v1.1.1"
         - name: HF_VAR_WORK_DIR
           value: "/work_dir"
         - name: HF_VAR_DEBUG
-          value: "0"
+          value: "1"
         - name: HF_VAR_BACKOFF_LIMIT
           value: "0"
         - name: HF_VAR_STOP_WORKFLOW_WHEN_JOB_FAILED
@@ -75,7 +76,8 @@ spec:
              subPath: job-template.yaml
              readOnly: true
       - name: hflow-tools
-        image: matplinta/hflow-tools:latest
+        #image: matplinta/hflow-tools:latest
+        image: hyperflowwms/hflow-tools:1.2.2
         imagePullPolicy: Always
         resources:
           requests:
@@ -101,5 +103,3 @@ spec:
       - name: workflow-data
         persistentVolumeClaim:
           claimName: nfs
-    
-
