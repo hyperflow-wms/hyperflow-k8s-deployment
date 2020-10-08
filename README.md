@@ -3,7 +3,40 @@
 
 <img src="https://github.com/hyperflow-wms/hyperflow-k8s-deployment/blob/master/hyperflow-k8s-arch.png" width="600">
 
+## Preparing the workflow
+### Workflow function
+To run workflows in a Kubernetes cluster, workflow tasks in `workflow.json` must use the `k8sCommand` function. It is recommended to use variable in `workflow.json` as follows:
+
+```
+function: {{function}}
+```
+The value of the `{{function}}` variable can be set via `HF_VAR_function=k8sCommand` environment variable. This is automatically done in `hyperflow-engine-deployment.yml`. 
+
+### Job template configuration
+Workflow tasks are run as Kubernetes Jobs specified by `job-template.yml`, a file which is currently defined as config-map `cm.yml`. The job template contains parameters whose values are set by variables `${var}`. The variables that could be customized in some cases are in particular:
+  * `containerName`: Docker container image to be used to run the task (globally configured through `HF_VAR_WORKER_CONTAINER` variable in `hyperflow-engine-deployment.yml`)
+  * `cpuRequest`: CPU [resource request](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers) for this job (default value: `0.5`)
+  * `memRequest`: Memory [resource request](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers) for this job (default value: `50Mi`)
+  * `volumePath`: path to the working directory where input data for the job is provided (default value: `/work_dir`)
+
+These variables have default values, but you can override them follows:
+
+* By providing `workflow.config.jobvars.json` file, e.g.
+```
+{
+  "containerName": "myWorkerContainer"
+}
+```
+* Some parameters can be set in workflow task definitions (`context.executor`) in `workflow.json`. This allows for per-task configuration of some variables:
+  * `image`: sets `containerName` for the task
+  * `cpuRequest`: sets `cpuRequest` for the task 
+  * `memRequest`: sets `memRequest` for the task
+  
+Note that all job variables have default values which will be used if not overridden.  
+
+  
 ## Running the workflow
+
 If you already have access to a Kubernetes cluster via `kubectl`, you can run workflows as follows. 
 
 ### Granting HyperFlow permission to create jobs
