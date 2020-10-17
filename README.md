@@ -4,6 +4,10 @@
 <img src="https://github.com/hyperflow-wms/hyperflow-k8s-deployment/blob/master/hyperflow-k8s-arch.png" width="600">
 
 ## Preparing the workflow
+### Workflow graph
+You need to provide the workflow graph as HyperFlow `workflow.json` file. This file needs to be uploaded to the working directory in the HyperFlow engine container (default location: `/work_dir`) before running the workflow. However, there are *workflow data containers* that already contain `workflow.json`, so you don't have to do anything if you use them (see below). 
+
+
 ### Workflow function
 To run workflows in a Kubernetes cluster, workflow tasks in `workflow.json` must use the `k8sCommand` function. It is recommended to use variable in `workflow.json` as follows:
 
@@ -12,8 +16,36 @@ function: {{function}}
 ```
 The value of the `{{function}}` variable can be set via `HF_VAR_function=k8sCommand` environment variable. This is automatically done in `hyperflow-engine-deployment.yml`. 
 
+### Configuration of Docker images
+To run a workflow, you need to provide the following Docker images:
+* *Worker image*: contains workflow software and HyperFlow [job executor](https://github.com/hyperflow-wms/hyperflow-job-executor). This image can be set via the `HF_VAR_WORKER_CONTAINER` environment variable in `hyperflow-engine-deployment.yml`. See *Job template configuration* for an alternative way.  
+* *Data image*: contains workflow data which is copied to a shared NFS volume which is the working directory where jobs are run (default `/work_dir`). This image is set in the `workflow-data` container in `nfs-server.yml`.
+
+ 
+#### Preparing container images
+You can find examples of Dockerfiles for worker and data containers in workflow repositories: [Montage](https://github.com/hyperflow-wms/montage-workflow), [Montage2](https://github.com/hyperflow-wms/montage2-workflow), [Soykb](https://github.com/hyperflow-wms/soykb-workflow). You can prepare your data containers and generate workflow graphs using workflow generators provided in some workflow repositories. 
+
+#### Running without data container
+To run the workflow without data container, you can set up an empty container and upload workflow data there before running the workflow. More instructions coming soon...
+
+
+#### Ready-to-use images
+
+[Montage](https://github.com/hyperflow-wms/montage-workflow)
+* Worker container: `hyperflowwms/montage-worker`
+* Data containers: `matplinta/montage-workflow-data:degree0.25` (very small, good for testing)
+
+[Montage2](https://github.com/hyperflow-wms/montage2-workflow)
+* Worker container: `hyperflowwms/montage2-worker`
+* Data containers: `matplinta/montage2-workflow-data:degree0.25` (small), `matplinta/montage2-workflow-data:degree1.0` (large, 4800 jobs)
+
+[Soykb](https://github.com/hyperflow-wms/soykb-workflow)
+* Worker container: `hyperflowwms/soykb-worker` 
+* Data containers: `hyperflowwms/soykb-workflow-data:hyperflow-soykb-example-f6f69d6ca3ebd9fe2458804b59b4ef71` (small, 53 jobs)
+
+
 ### Job template configuration
-Workflow tasks are run as Kubernetes Jobs specified by `job-template.yml`, a file which is currently defined as config-map `cm.yml`. The job template contains parameters whose values are set by variables `${var}`. The variables that could be customized in some cases are in particular:
+Workflow tasks are run as Kubernetes Jobs specified by `job-template.yml`, a file which is currently defined as config-map `cm.yml`. The job template contains parameters whose values are set by variables `${var}`, for example:
   * `containerName`: Docker container image to be used to run the task (globally configured through `HF_VAR_WORKER_CONTAINER` variable in `hyperflow-engine-deployment.yml`)
   * `cpuRequest`: CPU [resource request](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers) for this job (default value: `0.5`)
   * `memRequest`: Memory [resource request](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers) for this job (default value: `50Mi`)
@@ -62,9 +94,6 @@ kubectl apply -f hyperflow-engine-deployment.yml
 ```
 
 The default configuration runs a small Montage workflow. To change this, configure workflow *worker container* in `hyperflow-engine-deployment.yml` and *data container* in `nfs-server.yml`.
-
-### Running without the data container
-If you do not have a data container, you can set up a container that downloads the data before running the workflow. More instructions coming soon...
 
 ## Using Google Kubernetes Engine
 
