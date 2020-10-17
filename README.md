@@ -69,10 +69,12 @@ Note that all job variables have default values which will be used if not overri
   
 ## Running the workflow
 
-If you already have access to a Kubernetes cluster via `kubectl`, you can run workflows as follows. 
+### Prerequisites
 
-### Granting HyperFlow permission to create jobs
-To allow the HyperFlow process to create new Pods, you need to grant admin access to its service account. For now the workaround is to grant super-user access to all service accounts cluster-wide: 
+When setting up the Kubernetes cluster, please take into account the following.
+
+#### Granting HyperFlow permission to create jobs
+To allow the HyperFlow Engine Pod to create new Pods, you need to grant admin access to its service account. For now the workaround is to grant super-user access to all service accounts cluster-wide: 
 ```
 kubectl create clusterrolebinding serviceaccounts-cluster-admin \
 --clusterrole=cluster-admin \
@@ -80,6 +82,19 @@ kubectl create clusterrolebinding serviceaccounts-cluster-admin \
 ```
 
 or simply load `kubectl apply -f crb.yml`
+
+#### Node labels
+HyperFlow Kubernetes resources use the following [`nodeSelectors`](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector):
+* `nodetype: hfmaster` for all HyperFlow master components (Hyperflow engine deployment, Redis server, NFS server)
+* `nodetype: worker` for workflow job Pods
+
+Consequently, it is recommended to set up two pools in your cluster:
+* A *master* pool: 1 node with label `nodetype: hfmaster` -- for master components.
+* A *worker* pool: any number of nodes with label `nodetype: worker` -- for workflow jobs. 
+This way jobs won't interfere with workflow runtime components.
+
+If you don't want to use labels, you can use branch `minikube` that doesn't have selectors.  
+
 
 ### Creating Kubernetes resources
 Create Kubernetes resources as follows:
@@ -94,6 +109,11 @@ kubectl apply -f hyperflow-engine-deployment.yml
 ```
 
 The default configuration runs a small Montage workflow. To change this, configure workflow *worker container* in `hyperflow-engine-deployment.yml` and *data container* in `nfs-server.yml`.
+
+This will automatically run the workflow, unless variable `HF_VAR_DEBUG` is set to 1 in `hyperflow-engine-deployment.yml`. If this is the case, you can manually run the workflow as follows:
+* `kubectl exec -it <hyperflow-engine-pod> sh`
+* `cd /work_dir`
+* `hflow run .`
 
 ## Using Google Kubernetes Engine
 
