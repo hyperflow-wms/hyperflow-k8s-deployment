@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hyperflow-engine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: hyperflow-engine
+      name: hyperflow-engine
+  template:
+    metadata:
+      labels:
+        component: hyperflow-engine
+        name: hyperflow-engine
+    spec:
+      volumes:
+      - configMap:
+          name: hyperflow-config
+        name: config-map
+      - name: workflow-data
+        persistentVolumeClaim:
+          claimName: nfs

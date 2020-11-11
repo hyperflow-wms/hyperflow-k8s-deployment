@@ -1,0 +1,30 @@
+data:
+  job-template.yaml: "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: job${jobName}\n\
+    spec:\n  template:\n    spec:\n      restartPolicy: Never\n      containers:\n\
+    \      - name: test\n        image: ${containerName}\n        env:\n         \
+    \ - name: HF_VAR_ENABLE_NETHOGS\n            value: \"1\"\n          - name: HF_VAR_WORK_DIR\n\
+    \            value: \"${volumePath}\"\n          - name: HF_VAR_WAIT_FOR_INPUT_FILES\n\
+    \            value: \"0\"\n          - name: HF_VAR_NUM_RETRIES\n            value:\
+    \ \"1\"\n          - name: HF_LOG_NODE_NAME\n            valueFrom:\n        \
+    \      fieldRef:\n                fieldPath: spec.nodeName\n          - name:\
+    \ HF_LOG_POD_NAME\n            valueFrom:\n              fieldRef:\n         \
+    \       fieldPath: metadata.name\n          - name: HF_LOG_POD_NAMESPACE\n   \
+    \         valueFrom:\n              fieldRef:\n                fieldPath: metadata.namespace\n\
+    \          - name: HF_LOG_POD_IP\n            valueFrom:\n              fieldRef:\n\
+    \                fieldPath: status.podIP\n          - name: HF_LOG_POD_SERVICE_ACCOUNT\n\
+    \            valueFrom:\n              fieldRef:\n                fieldPath: spec.serviceAccountName\n\
+    \          - name: HF_VAR_FS_MONIT_ENABLED\n            value: \"0\"\n       \
+    \   - name: HF_VAR_FS_MONIT_COMMAND\n            value: '${command}'\n       \
+    \   - name: HF_VAR_FS_MONIT_PATH_PATTERN\n            value: \"${volumePath}/*\"\
+    \n        command:\n          - \"/bin/sh\"\n          - \"-c\"\n          - >\n\
+    \            if [ $HF_VAR_FS_MONIT_ENABLED -eq 1 ]; \n            then export\
+    \ LD_PRELOAD=/fbam/libfbam.so ;\n                 export HF_VAR_FS_MONIT_LOGFILE=\"\
+    ${volumePath}/logs-hf/file_access_log_$(echo \"${command}\" | tr ./: \"_\" | cut\
+    \ -d' ' -f2).jsonl\" ;\n                 touch $HF_VAR_FS_MONIT_LOGFILE ;  \n\
+    \            fi ;\n            ${command}; exitCode=$? ;\n            if [ $exitCode\
+    \ -ne 0 ]; then echo \"Command ${command} returned exit code. $exitCode. Job fails.\"\
+    \ ; exit 1 ; fi ;\n        workingDir: ${volumePath}\n        resources:\n   \
+    \       requests:\n            cpu: ${cpuRequest}\n            memory: ${memRequest}\n\
+    \        volumeMounts:\n        - name: my-pvc-nfs\n          mountPath: ${volumePath}\n\
+    \      volumes:\n      - name: workflow-data\n        emptyDir: {}\n      - name:\
+    \ my-pvc-nfs\n        persistentVolumeClaim:\n          claimName: nfs"
