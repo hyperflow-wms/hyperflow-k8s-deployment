@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fbam-parser
+spec:
+  template:
+    metadata:
+      labels:
+        name: fbam-parser
+        component: fbam-parser
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: fbam-parser
+          image: cano601/fbam-log-parser:latest
+          imagePullPolicy: Always
+          env:
+            - name: FBAM_LOGS_SOURCE_PATTERN
+              value: "/work_dir/logs-hf/*"
+            - name: FBAM_LOGS_TARGET_DIR
+              value: "/work_dir/fbam_parsed"
+            - name: FBAM_LOGS_SOURCE_FILE_REGEX
+              value: "^.*_([a-zA-Z0-9]+_[0-9])+_([0-9]+)_[0-9]+.jsonl$"
+          resources:
+            requests:
+              cpu: 0
+          command:
+            - "/bin/bash"
+            - "-c"
+            - >
+              while ! [ -f /work_dir/postprocStart ]; do echo "Waiting for postprocStart flag to be mounted..." ; sleep 5 ; done ;
+              echo "postprocStart flag mounted: " ; 
+              mkdir -p "$FBAM_LOGS_TARGET_DIR" ;
+              /log_parser.sh ;
+          volumeMounts:
+            - name: workflow-data
+              mountPath: "/work_dir:shared"
+      volumes:
+        - name: workflow-data
+          persistentVolumeClaim:
+            claimName: nfs
+

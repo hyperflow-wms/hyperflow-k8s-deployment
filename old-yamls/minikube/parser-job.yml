@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: logs-parser
+spec:
+  template:
+    metadata:
+      labels:
+        name: logs-parser
+        component: logs-parser
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: parser
+        image: hyperflowwms/log-parser:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 0 
+        command:
+          - "/bin/sh" 
+          - "-c"
+          - >
+            while ! [ -f /work_dir/postprocStart ]; do echo "Waiting for postprocStart flag to be mounted..." ; sleep 5 ; done ;
+            echo "postprocStart flag mounted: " ; 
+            ls -la /work_dir ;
+            mkdir -p /work_dir/parsed ;
+            python3 /parser.py -s /work_dir/logs-hf -d /work_dir/parsed -w /work_dir/workflow.json ;
+            cd /work_dir ;
+            echo 1 > /work_dir/parsingFinished
+            tar cvfz logs-hf.tar.gz logs-hf/ ;
+        volumeMounts:
+           - name: workflow-data
+             mountPath: "/work_dir:shared"
+      volumes:
+      - name: workflow-data
+        persistentVolumeClaim:
+          claimName: nfs
+

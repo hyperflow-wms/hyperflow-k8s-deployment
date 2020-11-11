@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      role: nfs-server
+  template:
+    metadata:
+      labels:
+        role: nfs-server
+    spec:
+      containers:
+      - name: nfs-server
+        image: gcr.io/google_containers/volume-nfs:0.8
+        # As a workaround we copy data from the data container to the nfs /exports directory before running 
+        command:
+          - "/bin/bash"
+          - "-c"
+          - >
+            while [ ! -d /workflow-data ] ; do "Waiting for /workflow-data to created" ; sleep 1 ; done ; 
+            while [ -z "$(ls -A /workflow-data)" ]; do echo "Waiting for /workflow-data to be mounted" ; sleep 1 ; done ;
+            echo "Copying content /workflow-data to /exports" ;
+            cp -vr  /workflow-data/* /exports/ ;
+            /usr/local/bin/run_nfs.sh /exports / ;
+        ports:
+          - name: nfs
+            containerPort: 2049
+          - name: mountd
+            containerPort: 20048
+          - name: rpcbind
+            containerPort: 111
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - name: workflow-data
+            mountPath: "/workflow-data:shared"
+      - name: workflow-data
+        #image: hyperflowwms/soykb-workflow-data:hyperflow-soykb-example-f6f69d6ca3ebd9fe2458804b59b4ef71
+        image: matplinta/montage-workflow-data:montage0.25-v2
+        #image: matplinta/montage2-workflow-data:degree1.0
+        imagePullPolicy: Always
+        command:
+          - "/bin/sh"
+          - "-c"
+          - >
+            mount -o bind /data /workflow-data ;
+            sleep 3600000 ;
+        securityContext:
+          privileged: true
+          capabilities:
+            add:
+              - SYS_ADMIN
+        lifecycle:
+          preStop:
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - >
+                  umount -fl /workflow-data;
+        volumeMounts:
+          - mountPath: /workflow-data:shared
+            name: workflow-data
+      volumes:
+      - name: workflow-data
+        emptyDir: {}

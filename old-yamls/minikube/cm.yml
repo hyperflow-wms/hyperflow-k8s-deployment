@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    name: hyperflow-engine
+    component: hyperflow-engine
+  name: hyperflow-config
+data:
+  job-template.yaml: |-
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: job${jobName}
+          spec:
+            template:
+              spec:
+                restartPolicy: Never
+                containers:
+                - name: test
+                  image: ${containerName}
+                  env:
+                    - name: HF_VAR_ENABLE_NETHOGS
+                      value: "1"
+                    - name: HF_VAR_WORK_DIR
+                      value: "${volumePath}"
+                    - name: HF_VAR_WAIT_FOR_INPUT_FILES
+                      value: "0"
+                    - name: HF_VAR_NUM_RETRIES
+                      value: "1"
+                    - name: HF_LOG_NODE_NAME
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: spec.nodeName
+                    - name: HF_LOG_POD_NAME
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.name
+                    - name: HF_LOG_POD_NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.namespace
+                    - name: HF_LOG_POD_IP
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: status.podIP
+                    - name: HF_LOG_POD_SERVICE_ACCOUNT
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: spec.serviceAccountName
+                    - name: HF_VAR_FS_MONIT_ENABLED
+                      value: "0"
+                    - name: HF_VAR_FS_MONIT_COMMAND
+                      value: '${command}'
+                    - name: HF_VAR_FS_MONIT_PATH_PATTERN
+                      value: "${volumePath}/*"
+                  command:
+                    - "/bin/sh"
+                    - "-c"
+                    - >
+                      if [ $HF_VAR_FS_MONIT_ENABLED -eq 1 ]; 
+                      then export LD_PRELOAD=/fbam/libfbam.so ;
+                           export HF_VAR_FS_MONIT_LOGFILE="${volumePath}/logs-hf/file_access_log_$(echo "${command}" | tr ./: "_" | cut -d' ' -f2).jsonl" ;
+                           touch $HF_VAR_FS_MONIT_LOGFILE ;  
+                      fi ;
+                      ${command}; exitCode=$? ;
+                      if [ $exitCode -ne 0 ]; then echo "Command ${command} returned exit code. $exitCode. Job fails." ; exit 1 ; fi ;
+                  workingDir: ${volumePath}
+                  resources:
+                    requests:
+                      cpu: ${cpuRequest}
+                      memory: ${memRequest}
+                  volumeMounts:
+                  - name: my-pvc-nfs
+                    mountPath: ${volumePath}
+                volumes:
+                - name: workflow-data
+                  emptyDir: {}
+                - name: my-pvc-nfs
+                  persistentVolumeClaim:
+                    claimName: nfs
