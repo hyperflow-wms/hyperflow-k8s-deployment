@@ -1,41 +1,21 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: fbam-parser
+  name: {{ include "common.names.fullname" . }}
 spec:
   template:
     metadata:
       labels:
-        component: fbam-parser
-        name: fbam-parser
+        component: {{ include "common.names.fullname" . }}
+        name: {{ include "common.names.fullname" . }}
     spec:
+      restartPolicy: {{ .Values.restartPolicy }}
+      volumes: {{- .Values.volumes | toYaml | nindent 6 }}
       containers:
-      - command:
-        - /bin/bash
-        - -c
-        - 'while ! [ -f /work_dir/postprocStart ]; do echo "Waiting for postprocStart
-          flag to be mounted..." ; sleep 5 ; done ; echo "postprocStart flag mounted:
-          " ;  mkdir -p "$FBAM_LOGS_TARGET_DIR" ; /log_parser.sh ;
-
-          '
-        env:
-        - name: FBAM_LOGS_SOURCE_PATTERN
-          value: /work_dir/logs-hf/*
-        - name: FBAM_LOGS_TARGET_DIR
-          value: /work_dir/fbam_parsed
-        - name: FBAM_LOGS_SOURCE_FILE_REGEX
-          value: ^.*_([a-zA-Z0-9]+_[0-9])+_([0-9]+)_[0-9]+.jsonl$
-        image: cano601/fbam-log-parser:latest
-        imagePullPolicy: Always
-        name: fbam-parser
-        resources:
-          requests:
-            cpu: 0
-        volumeMounts:
-        - mountPath: /work_dir:shared
-          name: workflow-data
-      restartPolicy: Never
-      volumes:
-      - name: workflow-data
-        persistentVolumeClaim:
-          claimName: nfs
+		    - name: {{ include "common.names.fullname" . }}
+		      image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+		      imagePullPolicy: {{ .Values.image.pullPolicy }}
+		      resources: {{- .Values.resources | toYaml | nindent 8 }}
+		      volumeMounts: {{- .Values.volumeMounts | toYaml | nindent 8 }}
+		      env: {{- .Values.parser.env | toYaml | nindent 8 }}
+		      command: {{- .Values.parser.command | toYaml | nindent 8 }}
