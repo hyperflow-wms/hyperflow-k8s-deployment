@@ -27,13 +27,13 @@ volumes:
     
 parser:
 	command:	
-		- /bin/bash
-		- -c
-		- 'while ! [ -f /work_dir/postprocStart ]; do echo "Waiting for postprocStart
-		  flag to be mounted..." ; sleep 5 ; done ; echo "postprocStart flag mounted:
-		  " ;  mkdir -p "$FBAM_LOGS_TARGET_DIR" ; /log_parser.sh ;
-
-		  '
+            - "/bin/bash"
+            - "-c"
+            - >
+              while ! [ -f /work_dir/postprocStart ]; do echo "Waiting for postprocStart flag to be mounted..." ; sleep 5 ; done ;
+              echo "postprocStart flag mounted: " ; 
+              mkdir -p "$FBAM_LOGS_TARGET_DIR" ;
+              /log_parser.sh ;
   env:  
     - name: FBAM_LOGS_SOURCE_PATTERN
       value: /work_dir/logs-hf/*
