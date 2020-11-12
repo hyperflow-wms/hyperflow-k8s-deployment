@@ -23,13 +23,22 @@ securityContext:
 container:
 	name: parser
 	command:
-		- /bin/sh
-    - -c
-    - "if [ $HF_VAR_DEBUG -eq 1 ] ; then\n  while true; do sleep 5 ; done ;\n\
-      else\n  if ! [ -d /work_dir/parsed ] ; then \n    echo \"Nothing to process,\
-      \ exiting.\" ;\n    exit 0 ;\n  fi ;\n  for dir in `ls -d /work_dir/parsed/*/`\
-      \ ; do \n    echo \"viz-trace: processing $dir ...\" ;\n    cd $dir\n  \
-      \  hflow-viz-trace -s . ;\n  done ;\nfi ;\n"
+    - "/bin/sh" 
+    - "-c"
+    - >
+      if [ $HF_VAR_DEBUG -eq 1 ] ; then
+        while true; do sleep 5 ; done ;
+      else
+        if ! [ -d /work_dir/parsed ] ; then 
+          echo "Nothing to process, exiting." ;
+          exit 0 ;
+        fi ;
+        for dir in `ls -d /work_dir/parsed/*/` ; do 
+          echo "viz-trace: processing $dir ..." ;
+          cd $dir
+          hflow-viz-trace -s . ;
+        done ;
+      fi ;
   env:
     - name: HF_VAR_DEBUG
     value: '0'
