@@ -1,40 +1,22 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: viz-exec-trace
+  name: {{ include "common.names.fullname" . }}
 spec:
   template:
     metadata:
       labels:
-        component: viz-exec-trace
-        name: viz-exec-trace
+        component: {{ include "common.names.fullname" . }}
+        name: {{ include "common.names.fullname" . }}
     spec:
+      restartPolicy: {{ .Values.restartPolicy }}
+      securityContext: {{- .Values.securityContext | toYaml | nindent 8 }}
       containers:
-      - command:
-        - /bin/sh
-        - -c
-        - "if [ $HF_VAR_DEBUG -eq 1 ] ; then\n  while true; do sleep 5 ; done ;\n\
-          else\n  if ! [ -d /work_dir/parsed ] ; then \n    echo \"Nothing to process,\
-          \ exiting.\" ;\n    exit 0 ;\n  fi ;\n  for dir in `ls -d /work_dir/parsed/*/`\
-          \ ; do \n    echo \"viz-trace: processing $dir ...\" ;\n    cd $dir\n  \
-          \  hflow-viz-trace -s . ;\n  done ;\nfi ;\n"
-        env:
-        - name: HF_VAR_DEBUG
-          value: '0'
-        image: hyperflowwms/viz-trace:v1.0.0
-        imagePullPolicy: Always
-        name: parser
-        resources:
-          requests:
-            cpu: 0
-        volumeMounts:
-        - mountPath: /work_dir:shared
-          name: workflow-data
-      restartPolicy: Never
-      securityContext:
-        fsGroup: 0
-        runAsUser: 0
-      volumes:
-      - name: workflow-data
-        persistentVolumeClaim:
-          claimName: nfs
+      - name: {{ .Values.container.name }}
+      	image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+      	command: {{- .Values.container.command | toYaml | nindent 8 }}
+        env: {{- .Values.container.env | toYaml | nindent 8 }}
+        resources: {{- .Values.resources | toYaml | nindent 8 }}
+        volumeMounts: {{- .Values.container.volumeMounts | toYaml | nindent 8 }}
+      volumes: {{- .Values.volumes | toYaml | nindent 8 }}
