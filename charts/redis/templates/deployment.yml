@@ -1,20 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redis
+  name: {{ include "common.names.fullname" . }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      name: redis
+      name: {{ include "common.names.fullname" . }}
   template:
     metadata:
       labels:
-        name: redis
+        name: {{ include "common.names.fullname" . }}
     spec:
       containers:
-      - image: redis:5.0.7-buster
-        name: redis
+      - image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        name: {{ include "common.names.fullname" . }}
         ports:
-        - containerPort: 6379
-          name: redis
+        - containerPort: {{ .Values.container.port }}
+          name: {{ include "common.names.fullname" . }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{ . | toYaml | nindent 8}}
+      {{- end }}

@@ -1,5 +1,0 @@
-spec:
-  template:
-    spec:
-      nodeSelector:
-        nodetype: hfmaster
