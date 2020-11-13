@@ -1,17 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nfs-server
+  name: {{ include "common.names.fullname" . }}-server
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      role: nfs-server
+      role: {{ include "common.names.fullname" . }}-server
   template:
     metadata:
       labels:
-        role: nfs-server
+        role: {{ include "common.names.fullname" . }}-server
     spec:
-      volumes:
-      - emptyDir: {}
-        name: workflow-data
+      containers:
+        - name: {{ include "common.names.fullname" . }}-server
+          image: {{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}
+          command: {{ .Values.serverContainer.command | toYaml | nindent 8 }}
+          ports: {{ .Values.serverContainer.ports | toYaml | nindent 8 }}
+          securityContext: {{ .Values.serverContainer.securityContext | toYaml | nindent 8 }}
+          volumeMounts: {{ .Values.volumeMounts | toYaml | nindent 8 }}
+        - name: {{ .Values.workflowDataContainer.name }}
+          image: {{ .Values.workflow.image.repository }}:{{ .Values.workflow.image.tag }}
+          imagePullPolicy: {{ .Values.workflow.image.pullPolicy}}
+          command: {{ .Values.workflowContainer.command | toYaml | nindent 8 }}
+          securityContext: {{- .Values.securityContext | toYaml | nindent 8 }}
+          lifecycle: {{- .Values.workflowDataContainer.lifecycle | toYaml | nindent 8 }}
+          volumeMounts: {{- .Values.volumeMounts | toYaml | nindent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{ . | toYaml | nindent 8}}
+      {{- end }}
+      volumes: {{ .Values.volumes | toYaml | nindent 8}}
+      
