@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "common.names.fullname" . }}
+  name: nfs
 spec:
   accessModes: {{ .Values.pv.accessModes | toYaml | nindent 4 }}
   resources:

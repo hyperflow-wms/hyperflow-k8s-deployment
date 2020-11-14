@@ -2,30 +2,17 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 server:
-  image:
-    repository: gcr.io/google_containers/volume-nfs
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: 0.8
+  image: gcr.io/google_containers/volume-nfs:0.8
+  imagePullPolicy: IfNotPresent
 
 workflow:
-  image:
-    repository: matplinta/montage-workflow-data
-    pullPolicy: Always
-    tag: montage0.25-v2
+  image: matplinta/montage-workflow-data:montage0.25-v2
+  imagePullPolicy: Always
 
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: "nfs"
-
-serviceAccount:
-  # Specifies whether a service account should be created
-  create: true
-  # Annotations to add to the service account
-  annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: ""
+ports:
+  nfs: 2049
+  mountd: 20048
+  rpcbind: 111
 
 pv:
   accessModes:
@@ -37,56 +24,12 @@ pv:
     server: nfs-server.default.svc.cluster.local
   storageClassName: ''
 
-securityContext:
-  capabilities:
-    add:
-    - SYS_ADMIN
-  privileged: true
-
-serverContainer:
-  command:
-    - "/bin/bash"
-    - "-c"
-    - >
-      while [ ! -d /workflow-data ] ; do "Waiting for /workflow-data to created" ; sleep 1 ; done ; 
-      while [ -z "$(ls -A /workflow-data)" ]; do echo "Waiting for /workflow-data to be mounted" ; sleep 1 ; done ;
-      echo "Copying content /workflow-data to /exports" ;
-      cp -vr  /workflow-data/* /exports/ ;
-      /usr/local/bin/run_nfs.sh /exports / ;
-  ports:
-    - containerPort: 2049
-      name: nfs
-    - containerPort: 20048
-      name: mountd
-    - containerPort: 111
-      name: rpcbind
-  securityContext:
-    privileged: true
-
-workflowDataContainer:
-  name: "workflow-data"
-  command:
-    - "/bin/sh"
-    - "-c"
-    - >
-      mount -o bind /data /workflow-data ;
-      sleep 3600000 ;
-  lifecycle:
-    preStop:
-      exec:
-        command:
-          - "sh"
-          - "-c"
-          - >
-            umount -fl /workflow-data;
-
 volumeMounts:
   - mountPath: /workflow-data:shared
     name: workflow-data
 
-volumeName: workflow-data
 volumes:
   - emptyDir: {}
-   name: workflow-data
+    name: workflow-data
 
 nodeSelector: {}

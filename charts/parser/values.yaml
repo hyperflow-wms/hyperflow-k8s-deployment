@@ -2,15 +2,8 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-nameOverride: ""
-fullnameOverride: "logs-parser"
-
-image:
-  repository: hyperflowwms/log-parser
-  pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: latest
-
+image: hyperflowwms/log-parser:latest
+imagePullPolicy: Always
 
 resources:
   requests:
@@ -21,21 +14,9 @@ restartPolicy: Never
 nodeSelector:
   nodetype: worker
 
-container:
-	name: parser
-	command:
-		- /bin/sh
-		- -c
-		- 'while ! [ -f /work_dir/postprocStart ]; do echo "Waiting for postprocStart
-		  flag to be mounted..." ; sleep 5 ; done ; echo "postprocStart flag mounted:
-		  " ;  ls -la /work_dir ; mkdir -p /work_dir/parsed ; python3 /parser.py -s
-		  /work_dir/logs-hf -d /work_dir/parsed -w /work_dir/workflow.json ; cd /work_dir
-		  ; echo 1 > /work_dir/parsingFinished tar cvfz logs-hf.tar.gz logs-hf/ ;
-
-		  '
-	volumeMounts:
-    - mountPath: /work_dir:shared
-      name: workflow-data	
+volumeMounts:
+  - mountPath: /work_dir:shared
+    name: workflow-data	
 
 volumes:
   - name: workflow-data

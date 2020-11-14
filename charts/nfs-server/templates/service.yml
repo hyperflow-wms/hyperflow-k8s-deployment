@@ -5,10 +5,10 @@ metadata:
 spec:
   ports:
   - name: nfs
-    port: 2049
+    port: {{ .Values.ports.nfs }}
   - name: mountd
-    port: 20048
+    port: {{ .Values.ports.mountd }}
   - name: rpcbind
-    port: 111
+    port: {{ .Values.ports.rpcbind }}
   selector:
     role: nfs-server

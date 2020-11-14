@@ -10,14 +10,23 @@ spec:
         name: logs-parser
     spec:
       containers:
-      - name: {{ .Values.container.name }}
-        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-      	command: {{ .Values.container.command | toYaml | nindent 8 }}
+      - name: parser
+        image: {{ .Values.image }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        command:
+          - /bin/sh
+          - -c
+          - 'while ! [ -f /work_dir/postprocStart ]; do echo "Waiting for postprocStart
+            flag to be mounted..." ; sleep 5 ; done ; echo "postprocStart flag mounted:
+            " ;  ls -la /work_dir ; mkdir -p /work_dir/parsed ; python3 /parser.py -s
+            /work_dir/logs-hf -d /work_dir/parsed -w /work_dir/workflow.json ; cd /work_dir
+            ; echo 1 > /work_dir/parsingFinished tar cvfz logs-hf.tar.gz logs-hf/ ;
+
+            '
         resources: {{- .Values.resources | toYaml | nindent 8 }}	
-        volumeMounts: {{- .Values.container.volumeMounts | toYaml | nindent 8 }}
+        volumeMounts: {{- .Values.volumeMounts | toYaml | nindent 8 }}
       restartPolicy: {{- .Values.restartPolicy }}
-      volumes: {{- .Values.volumes | toYaml | nindent 8 }}
+      volumes: {{- .Values.volumes | toYaml | nindent 6 }}
       {{- with .Values.nodeSelector }}
-      nodeSelector: {{ . | toYaml | nindent 8}}
+      nodeSelector: {{ . | toYaml | nindent 6}}
       {{- end }}

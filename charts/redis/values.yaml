@@ -4,14 +4,7 @@
 
 replicaCount: 1
 
-image:
-  repository: redis
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: 5.0.7-buster
-
-nameOverride: ""
-fullnameOverride: "redis"
+image: redis:5.0.7-buster
 
 container:
   port: 6379

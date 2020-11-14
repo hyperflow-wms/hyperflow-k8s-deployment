@@ -1,50 +1,18 @@
 # Default values for viz-trace.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-image:
-  repository: hyperflowwms/viz-trace
-  pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: v1.0.0
-
-nameOverride: ""
-fullnameOverride: "viz-exec-trace"
-
-resources:
-	requests:
-		cpu: 0
+image: hyperflowwms/viz-trace:v1.0.0
+imagePullPolicy: Always
 
 restartPolicy: Never
 
-securityContext:
-  fsGroup: 0
-  runAsUser: 0
+resources:
+  requests:
+    cpu: 0	
 
-container:
-	name: parser
-	command:
-    - "/bin/sh" 
-    - "-c"
-    - >
-      if [ $HF_VAR_DEBUG -eq 1 ] ; then
-        while true; do sleep 5 ; done ;
-      else
-        if ! [ -d /work_dir/parsed ] ; then 
-          echo "Nothing to process, exiting." ;
-          exit 0 ;
-        fi ;
-        for dir in `ls -d /work_dir/parsed/*/` ; do 
-          echo "viz-trace: processing $dir ..." ;
-          cd $dir
-          hflow-viz-trace -s . ;
-        done ;
-      fi ;
-  env:
-    - name: HF_VAR_DEBUG
-    value: '0'
-	volumeMounts:
-  - mountPath: /work_dir:shared
-    name: workflow-data
+volumeMounts:
+- mountPath: /work_dir:shared
+  name: workflow-data
     
 volumes:
 - name: workflow-data

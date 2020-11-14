@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "common.names.fullname" . }}
+  name: redis
 spec:
   ports:
-  - name: {{ include "common.names.fullname" . }}
+  - name: redis
     port: {{ .Values.container.port }}
-    targetPort: {{ include "common.names.fullname" . }}
+    targetPort: redis
   selector:
-    name: {{ include "common.names.fullname" . }}
+    name: redis

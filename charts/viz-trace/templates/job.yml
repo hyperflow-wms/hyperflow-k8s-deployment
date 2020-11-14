@@ -1,22 +1,42 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "common.names.fullname" . }}
+  name: viz-exec-trace
 spec:
   template:
     metadata:
       labels:
-        component: {{ include "common.names.fullname" . }}
-        name: {{ include "common.names.fullname" . }}
+        component: viz-exec-trace
+        name: viz-exec-trace
     spec:
       restartPolicy: {{ .Values.restartPolicy }}
-      securityContext: {{- .Values.securityContext | toYaml | nindent 8 }}
+      securityContext:
+        fsGroup: 0
+        runAsUser: 0
       containers:
-      - name: {{ .Values.container.name }}
-      	image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-      	command: {{- .Values.container.command | toYaml | nindent 8 }}
-        env: {{- .Values.container.env | toYaml | nindent 8 }}
+      - name: parser
+      	image: {{ .Values.image }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+      	command:
+          - "/bin/sh" 
+          - "-c"
+          - >
+            if [ $HF_VAR_DEBUG -eq 1 ] ; then
+              while true; do sleep 5 ; done ;
+            else
+              if ! [ -d /work_dir/parsed ] ; then 
+                echo "Nothing to process, exiting." ;
+                exit 0 ;
+              fi ;
+              for dir in `ls -d /work_dir/parsed/*/` ; do 
+                echo "viz-trace: processing $dir ..." ;
+                cd $dir
+                hflow-viz-trace -s . ;
+              done ;
+            fi ;
+        env:
+          - name: HF_VAR_DEBUG
+            value: '0'
         resources: {{- .Values.resources | toYaml | nindent 8 }}
-        volumeMounts: {{- .Values.container.volumeMounts | toYaml | nindent 8 }}
+        volumeMounts: {{- .Values.volumeMounts | toYaml | nindent 8 }}
       volumes: {{- .Values.volumes | toYaml | nindent 8 }}
