@@ -10,22 +10,24 @@ spec:
         name: logs-parser
     spec:
       containers:
-      - name: parser
-        image: {{ .Values.image }}
-        imagePullPolicy: {{ .Values.imagePullPolicy }}
-        command:
-          - /bin/sh
-          - -c
-          - 'while ! [ -f /work_dir/postprocStart ]; do echo "Waiting for postprocStart
-            flag to be mounted..." ; sleep 5 ; done ; echo "postprocStart flag mounted:
-            " ;  ls -la /work_dir ; mkdir -p /work_dir/parsed ; python3 /parser.py -s
-            /work_dir/logs-hf -d /work_dir/parsed -w /work_dir/workflow.json ; cd /work_dir
-            ; echo 1 > /work_dir/parsingFinished tar cvfz logs-hf.tar.gz logs-hf/ ;
-
-            '
-        resources: {{- .Values.resources | toYaml | nindent 8 }}	
-        volumeMounts: {{- .Values.volumeMounts | toYaml | nindent 8 }}
-      restartPolicy: {{- .Values.restartPolicy }}
+        - name: parser
+          image: {{ .Values.image }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          resources: {{ .Values.resources | toYaml | nindent 12 }}
+          command:
+            - "/bin/sh" 
+            - "-c"
+            - >
+              while ! [ -f /work_dir/postprocStart ]; do echo "Waiting for postprocStart flag to be mounted..." ; sleep 5 ; done ;
+              echo "postprocStart flag mounted: " ; 
+              ls -la /work_dir ;
+              mkdir -p /work_dir/parsed ;
+              python3 /parser.py -s /work_dir/logs-hf -d /work_dir/parsed -w /work_dir/workflow.json ;
+              cd /work_dir ;
+              echo 1 > /work_dir/parsingFinished
+              tar cvfz logs-hf.tar.gz logs-hf/ ;
+          volumeMounts: {{- .Values.volumeMounts | toYaml | nindent 10 }}
+      restartPolicy: {{ .Values.restartPolicy }}
       volumes: {{- .Values.volumes | toYaml | nindent 6 }}
       {{- with .Values.nodeSelector }}
       nodeSelector: {{ . | toYaml | nindent 6}}

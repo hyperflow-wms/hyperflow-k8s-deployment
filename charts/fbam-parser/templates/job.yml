@@ -11,19 +11,19 @@ spec:
     spec:
       restartPolicy: {{ .Values.restartPolicy }}
       containers:
-		    - name: fbam-parser
-		      image: {{ .Values.image }}
-		      imagePullPolicy: {{ .Values.imagePullPolicy }}
-		      resources: {{- .Values.resources | toYaml | nindent 10 }}
-		      volumeMounts: {{- .Values.volumeMounts | toYaml | nindent 10 }}
-		      env: 
+        - name: fbam-parser
+          image: {{ .Values.image }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          resources: {{- .Values.resources | toYaml | nindent 12 }}
+          volumeMounts: {{- .Values.volumeMounts | toYaml | nindent 12 }}
+          env: 
             - name: FBAM_LOGS_SOURCE_PATTERN
               value: /work_dir/logs-hf/*
             - name: FBAM_LOGS_TARGET_DIR
               value: /work_dir/fbam_parsed
             - name: FBAM_LOGS_SOURCE_FILE_REGEX
               value: ^.*_([a-zA-Z0-9]+_[0-9])+_([0-9]+)_[0-9]+.jsonl$
-		      command: 
+          command: 
             - "/bin/bash"
             - "-c"
             - >
@@ -31,4 +31,4 @@ spec:
               echo "postprocStart flag mounted: " ; 
               mkdir -p "$FBAM_LOGS_TARGET_DIR" ;
               /log_parser.sh ;
-      volumes: {{- .Values.volumes | toYaml | nindent 6 }}
+      volumes: {{- .Values.volumes | toYaml | nindent 8 }}

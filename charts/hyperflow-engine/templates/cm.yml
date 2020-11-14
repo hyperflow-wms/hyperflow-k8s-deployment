@@ -5,4 +5,10 @@ metadata:
     component: hyperflow-engine
     name: hyperflow-engine
   name: hyperflow-config
-data: {{ .Values.configMap.data | toYaml | nindent 4}}
+{{- with .Values.configMap.data }}
+data:
+{{- range $key, $val := . -}}
+{{ $key | nindent 2 }}: |
+{{ $val | indent 4 }}
+{{- end }}
+{{- end }}

@@ -6,14 +6,14 @@ imagePullPolicy: Always
 restartPolicy: Never
   
 resources:
-	requests:
-		cpu: 0
-		
+  requests:
+    cpu: 0
+
 volumeMounts:
-- mountPath: /work_dir:shared
-  name: workflow-data
+  - mountPath: /work_dir:shared
+    name: workflow-data
 
 volumes:
-- name: workflow-data
-  persistentVolumeClaim:
-    claimName: nfs
+  - name: workflow-data
+    persistentVolumeClaim:
+      claimName: nfs
