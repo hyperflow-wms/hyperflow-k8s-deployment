@@ -27,6 +27,7 @@ containers:
         mkdir -p /work_dir/logs-hf ;
         if [ $HF_VAR_DEBUG -eq 0 ] ; then
           echo "Running workflow:" ;
+          cd /work_dir ;
           hflow run workflow.json ;
           if [ "$(ls -A /work_dir/logs-hf)" ]; then
             echo 1 > /work_dir/postprocStart ;
