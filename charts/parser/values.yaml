@@ -1,0 +1,24 @@
+# Default values for parser.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image: hyperflowwms/log-parser:latest
+imagePullPolicy: Always
+
+resources:
+  requests:
+    cpu: 0
+
+restartPolicy: Never
+
+nodeSelector:
+  nodetype: worker
+
+volumeMounts:
+  - mountPath: /work_dir:shared
+    name: workflow-data	
+
+volumes:
+  - name: workflow-data
+    persistentVolumeClaim:
+      claimName: nfs  

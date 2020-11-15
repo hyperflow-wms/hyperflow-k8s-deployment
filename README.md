@@ -69,11 +69,13 @@ Note that all job variables have default values which will be used if not overri
   
 ## Running the workflow
 
-### Prerequisites
+### Setting up the cluster the Helm way
 
-When setting up the Kubernetes cluster, please take into account the following.
+Firstly, make sure your k8s context and namespaces point to right cluster. Then, setup the helm on your cluster using `helm init --history-max 50`.
 
-#### Granting HyperFlow permission to create jobs
+There are several details you should know before installing Hyperflow on your cluster:
+
+#### Cluster role bindings
 To allow the HyperFlow Engine Pod to create new Pods, you need to grant admin access to its service account. For now the workaround is to grant super-user access to all service accounts cluster-wide: 
 ```
 kubectl create clusterrolebinding serviceaccounts-cluster-admin \
@@ -81,7 +83,7 @@ kubectl create clusterrolebinding serviceaccounts-cluster-admin \
 --group=system:serviceaccounts
 ```
 
-or simply load `kubectl apply -f crb.yml`
+This is included in `hyperflow-engine` chart and is applied automatically when it is installed.
 
 #### Node labels
 HyperFlow Kubernetes resources use the following [`nodeSelectors`](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector):
@@ -93,24 +95,20 @@ Consequently, it is recommended to set up two pools in your cluster:
 * A *worker* pool: any number of nodes with label `nodetype: worker` -- for workflow jobs. 
 This way jobs won't interfere with workflow runtime components.
 
-If you don't want to use labels, you can use branch `minikube` that doesn't have selectors.  
+If you don't want to use labels, you can use values from `minikube` directory that don't use selectors.  
 
 
-### Creating Kubernetes resources
-Create Kubernetes resources as follows:
+### Installing resources
+Assuming you are in repository main directory, install Kubernetes resources as follows:
 ```
-kubectl apply -f cm.yml
-kubectl apply -f nfs-server-service.yml
-kubectl apply -f redis-service.yml
-kubectl apply -f redis.yml
-kubectl apply -f nfs-server.yml
-kubectl apply -f pv-pvc.yml
-kubectl apply -f hyperflow-engine-deployment.yml
+helm install nfs-server charts/nfs-server --values values/cluster/nfs-server.yml
+helm install redis charts/redis --values values/cluster/redis.yml
+helm install hyperflow-endinge charts/hyperflow-engine --values values/cluster/hyperflow-engine.yml
 ```
 
-The default configuration runs a small Montage workflow. To change this, configure workflow *worker container* in `hyperflow-engine-deployment.yml` and *data container* in `nfs-server.yml`.
+The default configuration runs a small Montage workflow. To change this, configure workflow *worker container* in `values/cluster/hyperflow-engine.yml` and *data container* in `values/cluster/nfs-server.yml`.
 
-This will automatically run the workflow, unless variable `HF_VAR_DEBUG` is set to 1 in `hyperflow-engine-deployment.yml`. If this is the case, you can manually run the workflow as follows:
+This will automatically run the workflow, unless variable `HF_VAR_DEBUG` is set to 1 in `containers.worker.additionalVariables` in file `values/cluster/hyperflow-engine.yml`. If this is the case, you can manually run the workflow as follows:
 * `kubectl exec -it <hyperflow-engine-pod> sh`
 * `cd /work_dir`
 * `hflow run .`
@@ -169,13 +167,13 @@ options ndots:5 timeout:1
 ## Processing logs
 After the workflow has finished, you can process its logs by starting the following Kubernetes job:
 ```
-kubectl apply -f parser-job.yml
+helm upgrade --install charts/parser --values values/cluster/parser
 ```
 This will create a number of `jsonl` (JSON lines format) files in directory `/work_dir/parsed/<workflow_dir>`. The structure of these files is documented [here](https://github.com/hyperflow-wms/log-parser). 
 
 ## Visualization of workflow execution trace
 To generate a visualization of the workflow execution, first you need to generate the processed logs (see above), then run this Kubernetes job:
 ```
-kubectl apply -f viz-trace-job.yml
+helm upgrade --install charts/viz-trace --values values/cluster/viz-trace
 ```
 This generates a `png` file in each `/work_dir/parsed/<workflow_dir>` directory.

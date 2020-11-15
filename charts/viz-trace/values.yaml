@@ -1,0 +1,20 @@
+# Default values for viz-trace.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+image: hyperflowwms/viz-trace:v1.0.0
+imagePullPolicy: Always
+
+restartPolicy: Never
+
+resources:
+  requests:
+    cpu: 0	
+
+volumeMounts:
+- mountPath: /work_dir:shared
+  name: workflow-data
+    
+volumes:
+- name: workflow-data
+  persistentVolumeClaim:
+    claimName: nfs

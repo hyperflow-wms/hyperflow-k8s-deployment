@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-server
+spec:
+  selector:
+    matchLabels:
+      role: nfs-server
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        role: nfs-server
+    spec:
+      containers:
+        - name: nfs-server
+          image: {{ .Values.server.image }}
+          imagePullPolicy: {{ .Values.server.imagePullPolicy}}
+          command:
+            - "/bin/bash"
+            - "-c"
+            - >
+              while [ ! -d /workflow-data ] ; do "Waiting for /workflow-data to created" ; sleep 1 ; done ; 
+              while [ -z "$(ls -A /workflow-data)" ]; do echo "Waiting for /workflow-data to be mounted" ; sleep 1 ; done ;
+              echo "Copying content /workflow-data to /exports" ;
+              cp -vr  /workflow-data/* /exports/ ;
+              /usr/local/bin/run_nfs.sh /exports / ;
+          ports:
+            - containerPort: {{ .Values.ports.nfs }}
+              name: nfs
+            - containerPort: {{ .Values.ports.mountd }}
+              name: mountd
+            - containerPort: {{ .Values.ports.rpcbind }}
+              name: rpcbind
+          securityContext:
+            privileged: true
+          volumeMounts: {{ .Values.volumeMounts | toYaml | nindent 8 }}
+        - name: workflow-data
+          image: {{ .Values.workflow.image }}
+          imagePullPolicy: {{ .Values.workflow.imagePullPolicy}}
+          command:
+            - "/bin/sh"
+            - "-c"
+            - >
+              mount -o bind /data /workflow-data ;
+              sleep 3600000 ;
+          securityContext:
+            capabilities:
+              add:
+              - SYS_ADMIN
+            privileged: true
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - "sh"
+                  - "-c"
+                  - >
+                    umount -fl /workflow-data;
+          volumeMounts: {{- .Values.volumeMounts | toYaml | nindent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{ . | toYaml | nindent 8}}
+      {{- end }}
+      volumes: {{ .Values.volumes | toYaml | nindent 8}}
+      

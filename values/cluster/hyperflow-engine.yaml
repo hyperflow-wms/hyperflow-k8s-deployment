@@ -1,0 +1,123 @@
+resources:
+  requests:
+    cpu: 1.5
+    memory: "2000Mi"
+  limits:
+    cpu: 2.5
+    memory: "5000Mi"
+
+containers:
+  worker:
+    image: "hyperflowwms/montage2-worker"
+    additionalVariables:
+      - name: HF_VAR_DEBUG
+        value: "0"
+      - name: HF_VAR_CPU_REQUEST
+        value: "0.7"
+      - name: HF_VAR_MEM_REQUEST
+        value: "500Mi"
+    command:
+      - "/bin/sh"
+      - "-c"
+      - >
+        echo "Hyperflow environmental variables:" ;
+        env | grep "HF_" ;
+        while ! [ -f /work_dir/workflow.json ]; do echo "Waiting for workflow.json to be mounted..." ; done ;
+        echo "Workflow data mounted: " ; ls -la /work_dir ;
+        mkdir -p /work_dir/logs-hf ;
+        if [ $HF_VAR_DEBUG -eq 0 ] ; then
+          echo "Running workflow:" ;
+          cd /work_dir ;
+          hflow run workflow.json ;
+          if [ "$(ls -A /work_dir/logs-hf)" ]; then
+            echo 1 > /work_dir/postprocStart ;
+          else
+            echo "Hyperflow logs not collected. Something must have gone wrong!"
+          fi ;
+          echo "Workflow finished. Container is waiting for manual termination." ;
+          while true; do sleep 5 ; done ;
+        else
+          while true; do sleep 5 ; done ;
+        fi ;
+  tools:
+    image: matplinta/hflow-tools:latest
+
+nodeSelector:
+  nodetype: hfmaster
+
+configMap:
+  data:
+    job-template.yaml: |-
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: job${jobName}
+          spec:
+            template:
+              spec:
+                restartPolicy: Never
+                containers:
+                - name: test
+                  image: ${containerName}
+                  env:
+                   #- name: HF_VAR_ENABLE_NETHOGS
+                      #value: "0"
+                    - name: HF_VAR_WORK_DIR
+                      value: "${volumePath}"
+                    - name: HF_VAR_WAIT_FOR_INPUT_FILES
+                      value: "0"
+                    - name: HF_VAR_NUM_RETRIES
+                      value: "1"
+                    - name: HF_LOG_NODE_NAME
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: spec.nodeName
+                    - name: HF_LOG_POD_NAME
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.name
+                    - name: HF_LOG_POD_NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.namespace
+                    - name: HF_LOG_POD_IP
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: status.podIP
+                    - name: HF_LOG_POD_SERVICE_ACCOUNT
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: spec.serviceAccountName
+                    - name: HF_VAR_FS_MONIT_ENABLED
+                      value: "0"
+                    - name: HF_VAR_FS_MONIT_COMMAND
+                      value: '${command}'
+                    - name: HF_VAR_FS_MONIT_PATH_PATTERN
+                      value: "${volumePath}/*"
+                  command:
+                    - "/bin/sh"
+                    - "-c"
+                    - >
+                      if [ $HF_VAR_FS_MONIT_ENABLED -eq 1 ]; 
+                      then export LD_PRELOAD=/fbam/libfbam.so ;
+                           export HF_VAR_FS_MONIT_LOGFILE="${volumePath}/logs-hf/file_access_log_$(echo "${command}" | tr ./: "_" | cut -d' ' -f2).jsonl" ;
+                           touch $HF_VAR_FS_MONIT_LOGFILE ;  
+                      fi ;
+                      ${command}; exitCode=$? ;
+                      if [ $exitCode -ne 0 ]; then echo "Command ${command} returned exit code. $exitCode. Job fails." ; exit 1 ; fi ;
+                  workingDir: ${volumePath}
+                  resources:
+                    requests:
+                      cpu: ${cpuRequest}
+                      memory: ${memRequest}
+                  volumeMounts:
+                  - name: my-pvc-nfs
+                    mountPath: ${volumePath}
+                nodeSelector:
+                  nodetype: worker
+                volumes:
+                - name: workflow-data
+                  emptyDir: {}
+                - name: my-pvc-nfs
+                  persistentVolumeClaim:
+                    claimName: nfs

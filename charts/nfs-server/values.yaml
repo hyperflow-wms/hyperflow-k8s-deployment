@@ -1,0 +1,35 @@
+# Default values for nfs-server.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+server:
+  image: gcr.io/google_containers/volume-nfs:0.8
+  imagePullPolicy: IfNotPresent
+
+workflow:
+  image: matplinta/montage-workflow-data:montage0.25-v2
+  imagePullPolicy: Always
+
+ports:
+  nfs: 2049
+  mountd: 20048
+  rpcbind: 111
+
+pv:
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 20Gi
+  nfs:
+    path: /
+    server: nfs-server.default.svc.cluster.local
+  storageClassName: ''
+
+volumeMounts:
+  - mountPath: /workflow-data:shared
+    name: workflow-data
+
+volumes:
+  - emptyDir: {}
+    name: workflow-data
+
+nodeSelector: {}

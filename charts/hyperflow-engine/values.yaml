@@ -1,0 +1,38 @@
+resources: {}
+
+containers:
+  hyperflow:
+    image: hyperflowwms/hyperflow:v1.5.2
+  worker:
+    image: "hyperflowwms/montage2-worker"
+    additionalVariables: []
+    command:
+      - "/bin/sh"
+      - "-c"
+      - >
+        echo "Hyperflow environmental variables:" ;
+        env | grep "HF_" ;
+        while ! [ -f /work_dir/workflow.json ]; do echo "Waiting for workflow.json to be mounted..." ; done ;
+        echo "Workflow data mounted: " ; ls -la /work_dir ;
+        mkdir -p /work_dir/logs-hf ;
+        if [ $HF_VAR_DEBUG -eq 0 ] ; then
+          echo "Running workflow:" ;
+          hflow run workflow.json ;
+          if [ "$(ls -A /work_dir/logs-hf)" ]; then
+            echo 1 > /work_dir/postprocStart ;
+          else
+            echo "Hyperflow logs not collected. Something must have gone wrong!"
+          fi ;
+          echo "Workflow finished. Container is waiting for manual termination." ;
+          while true; do sleep 5 ; done ;
+        else
+          while true; do sleep 5 ; done ;
+        fi ;
+  tools:
+    image: matplinta/hflow-tools:latest
+
+configMap:
+  data: {}
+
+# You might want to pecify node selector if working on fully-grown cluster
+nodeSelector: {}

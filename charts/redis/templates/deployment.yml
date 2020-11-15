@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      name: redis
+  template:
+    metadata:
+      labels:
+        name: redis
+    spec:
+      containers:
+        - image: {{ .Values.image }}
+          name: redis
+          ports:
+            - containerPort: {{ .Values.container.port }}
+              name: redis
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{ . | toYaml | nindent 8}}
+      {{- end }}

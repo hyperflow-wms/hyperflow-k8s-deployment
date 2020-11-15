@@ -1,0 +1,19 @@
+# Default values for fbam-parser.
+# Declare variables to be passed into your templates.
+
+image: cano601/fbam-log-parser:latest
+imagePullPolicy: Always
+restartPolicy: Never
+  
+resources:
+  requests:
+    cpu: 0
+
+volumeMounts:
+  - mountPath: /work_dir:shared
+    name: workflow-data
+
+volumes:
+  - name: workflow-data
+    persistentVolumeClaim:
+      claimName: nfs

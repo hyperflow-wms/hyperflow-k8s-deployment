@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: viz-exec-trace
+spec:
+  template:
+    metadata:
+      labels:
+        component: viz-exec-trace
+        name: viz-exec-trace
+    spec:
+      restartPolicy: {{ .Values.restartPolicy }}
+      securityContext:
+        fsGroup: 0
+        runAsUser: 0
+      containers:
+        - name: parser
+          image: {{ .Values.image }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          resources: {{- .Values.resources | toYaml | nindent 12 }}
+          command:
+            - "/bin/sh" 
+            - "-c"
+            - >
+              if [ $HF_VAR_DEBUG -eq 1 ] ; then
+                while true; do sleep 5 ; done ;
+              else
+                if ! [ -d /work_dir/parsed ] ; then 
+                  echo "Nothing to process, exiting." ;
+                  exit 0 ;
+                fi ;
+                for dir in `ls -d /work_dir/parsed/*/` ; do 
+                  echo "viz-trace: processing $dir ..." ;
+                  cd $dir
+                  hflow-viz-trace -s . ;
+                done ;
+              fi ;
+          env:
+            - name: HF_VAR_DEBUG
+              value: '0'
+          volumeMounts: {{- .Values.volumeMounts | toYaml | nindent 12 }}
+      volumes: {{- .Values.volumes | toYaml | nindent 8 }}

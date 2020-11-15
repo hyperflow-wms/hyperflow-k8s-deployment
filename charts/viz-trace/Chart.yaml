@@ -1,0 +1,6 @@
+apiVersion: v2
+name: viz-trace
+description: A Helm chart for viz-trace job
+type: application
+version: 0.1.0
+appVersion: v1.0.0

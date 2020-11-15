@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    component: hyperflow-engine
+    name: hyperflow-engine
+  name: hyperflow-config
+{{- with .Values.configMap.data }}
+data:
+{{- range $key, $val := . -}}
+{{ $key | nindent 2 }}: |
+{{ $val | indent 4 }}
+{{- end }}
+{{- end }}

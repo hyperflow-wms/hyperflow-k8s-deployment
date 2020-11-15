@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hyperflow-engine
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      name: hyperflow-engine
+      component: hyperflow-engine
+  template:
+    metadata:
+      labels:
+        name: hyperflow-engine
+        component: hyperflow-engine
+    spec:
+      containers:
+        - name: hyperflow
+          image: {{ .Values.containers.hyperflow.image }}
+          imagePullPolicy: Always
+          {{- with .Values.resources }}
+          resources: {{ . | toYaml | nindent 10 }}
+          {{- end }}
+          env:
+          - name: REDIS_URL
+            # Change that value to reflect your and namespace and cluster FQDN
+            value: redis://redis.default.svc.cluster.local:6379
+          - name: HF_VAR_function
+            # The source of this function can be found here
+            # https://github.com/hyperflow-wms/hyperflow/blob/master/functions/kubernetes/k8sCommand.js
+            value: "k8sCommand"
+          - name: HF_VAR_JOB_TEMPLATE_PATH
+            value: "/opt/hyperflow/job-template.yaml"
+          - name: HF_VAR_WORKER_CONTAINER
+            #value: "hyperflowwms/soykb-workflow-worker:v1.0.10-1-g95b7caf"
+            #value: "cano601/soykb-workflow:latest" # SoyKB with file block access monitoring
+            #value: "matplinta/montage-workflow-worker:exec1.0.13"
+            value: {{ .Values.containers.worker.image }}
+          - name: HF_VAR_WORK_DIR
+            value: "/work_dir"
+          - name: HF_VAR_BACKOFF_LIMIT
+            value: "0"
+          - name: HF_VAR_STOP_WORKFLOW_WHEN_JOB_FAILED
+            value: "1"
+          - name: HF_VAR_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          {{- with .Values.containers.worker.additionalVariables }}
+          {{ . | toYaml | nindent 10 }}
+          {{- end }}
+          command: {{ .Values.containers.worker.command | toYaml | nindent 10}}
+          volumeMounts:
+            - name: workflow-data
+              mountPath: "/work_dir:shared"
+            - name: config-map
+              mountPath: /opt/hyperflow/job-template.yaml
+              subPath: job-template.yaml
+              readOnly: true
+        - name: hflow-tools
+          image: {{ .Values.containers.tools.image }}
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: 0 
+          command:
+            - "/bin/bash" 
+            - "-c"
+            - >
+              while ! [ -f /work_dir/parsingFinished ]; do echo "Waiting for parsingFinished flag to be mounted..." ; sleep 5 ; done ;
+              echo "parsingFinished flag mounted: " ; 
+              ls -la /work_dir/parsingFinished ;
+              cd /work_dir/parsed/*/ ;
+              sudo chmod -R 777 . ;
+              hflow-viz-trace -s . ;
+              while true; do sleep 5 ; done ;
+          volumeMounts:
+            - name: workflow-data
+              mountPath: "/work_dir:shared"
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{ . | toYaml | nindent 10 }}
+      {{- end }}
+      volumes:
+      - name: config-map
+        configMap:
+          name: hyperflow-config
+      - name: workflow-data
+        persistentVolumeClaim:
+          claimName: nfs
