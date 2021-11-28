@@ -1,0 +1,16 @@
+resources: {}
+
+container:
+  imagePullPolicy: Always
+  image: mbszarek/hyperflow-standalone-autoscaler:v0.12.0-8-g8a00083
+  command:
+    - "/bin/sh"
+    - "-c"
+    - >
+      node /hyperflow-autoscaler-plugin/packages/autoscaler-engine/lib/main.js ;
+
+configMap:
+  data:
+
+# You might want to pecify node selector if working on fully-grown cluster
+nodeSelector: {}

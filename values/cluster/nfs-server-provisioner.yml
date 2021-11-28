@@ -1,0 +1,7 @@
+nodeSelector:
+  cloud.google.com/gke-nodepool: hfmaster
+
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 50Gi

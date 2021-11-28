@@ -3,9 +3,9 @@ kind: ConfigMap
 metadata:
   labels:
     app: hyperflow
-    component: hyperflow-engine
-    name: hyperflow-engine
-  name: hyperflow-config
+    component: hyperflow-standalone-autoscaler
+    name: hyperflow-standalone-autoscaler
+  name: hyperflow-standalone-autoscaler-config
 {{- with .Values.configMap.data }}
 data:
 {{- range $key, $val := . -}}

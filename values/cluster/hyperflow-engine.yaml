@@ -7,8 +7,16 @@ resources:
     memory: "5000Mi"
 
 containers:
+  hyperflow:
+    image: mbszarek/hyperflow:v1.5.7-19-g014a496
+    runAsServer: true
+    serverCommand:
+      - "/bin/sh"
+      - "-c"
+      - >
+        hflow start-server --host 0.0.0.0 --port 8080 ;
   worker:
-    image: "hyperflowwms/montage2-worker"
+    image: mbszarek/montage2-worker:je-1.1.6
     additionalVariables:
       - name: HF_VAR_DEBUG
         value: "0"
@@ -16,34 +24,17 @@ containers:
         value: "0.7"
       - name: HF_VAR_MEM_REQUEST
         value: "500Mi"
-    command:
-      - "/bin/sh"
-      - "-c"
-      - >
-        echo "Hyperflow environmental variables:" ;
-        env | grep "HF_" ;
-        while ! [ -f /work_dir/workflow.json ]; do echo "Waiting for workflow.json to be mounted..." ; done ;
-        echo "Workflow data mounted: " ; ls -la /work_dir ;
-        mkdir -p /work_dir/logs-hf ;
-        if [ $HF_VAR_DEBUG -eq 0 ] ; then
-          echo "Running workflow:" ;
-          cd /work_dir ;
-          hflow run workflow.json ;
-          if [ "$(ls -A /work_dir/logs-hf)" ]; then
-            echo 1 > /work_dir/postprocStart ;
-          else
-            echo "Hyperflow logs not collected. Something must have gone wrong!"
-          fi ;
-          echo "Workflow finished. Container is waiting for manual termination." ;
-          while true; do sleep 5 ; done ;
-        else
-          while true; do sleep 5 ; done ;
-        fi ;
+      - name: PORT
+        value: "8080"
+      - name: HF_VAR_autoscalerAddress
+        value: 'http://hyperflow-standalone-autoscaler:8080'
+      - name: NODE_OPTIONS
+        value: "--max-old-space-size=4096"
   tools:
-    image: matplinta/hflow-tools:latest
+    image: hyperflowwms/hflow-tools:v1.3.0
 
 nodeSelector:
-  nodetype: hfmaster
+  cloud.google.com/gke-nodepool: hfmaster
 
 configMap:
   data:
@@ -53,7 +44,11 @@ configMap:
           metadata:
             name: job${jobName}
           spec:
+            ttlSecondsAfterFinished: 100
             template:
+              metadata:
+                labels:
+                  app: hyperflow
               spec:
                 restartPolicy: Never
                 containers:
@@ -63,7 +58,7 @@ configMap:
                    #- name: HF_VAR_ENABLE_NETHOGS
                       #value: "0"
                     - name: HF_VAR_WORK_DIR
-                      value: "${volumePath}"
+                      value: "${workingDirPath}"
                     - name: HF_VAR_WAIT_FOR_INPUT_FILES
                       value: "0"
                     - name: HF_VAR_NUM_RETRIES
@@ -93,19 +88,19 @@ configMap:
                     - name: HF_VAR_FS_MONIT_COMMAND
                       value: '${command}'
                     - name: HF_VAR_FS_MONIT_PATH_PATTERN
-                      value: "${volumePath}/*"
+                      value: "${workingDirPath}/*"
                   command:
                     - "/bin/sh"
                     - "-c"
                     - >
                       if [ $HF_VAR_FS_MONIT_ENABLED -eq 1 ]; 
                       then export LD_PRELOAD=/fbam/libfbam.so ;
-                           export HF_VAR_FS_MONIT_LOGFILE="${volumePath}/logs-hf/file_access_log_$(echo "${command}" | tr ./: "_" | cut -d' ' -f2).jsonl" ;
+                           export HF_VAR_FS_MONIT_LOGFILE="${workingDirPath}/logs-hf/file_access_log_$(echo "${command}" | tr ./: "_" | cut -d' ' -f2).jsonl" ;
                            touch $HF_VAR_FS_MONIT_LOGFILE ;  
                       fi ;
                       ${command}; exitCode=$? ;
                       if [ $exitCode -ne 0 ]; then echo "Command ${command} returned exit code. $exitCode. Job fails." ; exit 1 ; fi ;
-                  workingDir: ${volumePath}
+                  workingDir: ${workingDirPath}
                   resources:
                     requests:
                       cpu: ${cpuRequest}
@@ -114,7 +109,7 @@ configMap:
                   - name: my-pvc-nfs
                     mountPath: ${volumePath}
                 nodeSelector:
-                  nodetype: worker
+                  cloud.google.com/gke-nodepool: default-pool
                 volumes:
                 - name: workflow-data
                   emptyDir: {}

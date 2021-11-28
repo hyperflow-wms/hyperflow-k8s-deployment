@@ -1,0 +1,6 @@
+apiVersion: v2
+name: hyperflow-nfs-data
+description: A Helm chart for example Hyperflow data to copy on nfs
+type: application
+version: 0.1.0
+appVersion: v0.8

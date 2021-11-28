@@ -1,0 +1,31 @@
+# Helper pod to run hflow commands on hyperflow server
+apiVersion: v1
+kind: Pod
+metadata:
+  name: execpod
+spec:
+  containers:
+  - command:
+    - /bin/sh
+    - -c
+    - "while true; do sleep 30; done"
+    image: hyperflowwms/hyperflow:v1.5.7
+    imagePullPolicy: IfNotPresent
+    name: execpod
+    resources:
+      requests:
+        cpu: 100m
+        memory: 100Mi
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /work_dir
+      name: my-pvc-nfs
+    workingDir: /work_dir
+  nodeSelector:
+    cloud.google.com/gke-nodepool: hfmaster
+  restartPolicy: Never
+  volumes:
+  - name: my-pvc-nfs
+    persistentVolumeClaim:
+      claimName: nfs

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hyperflow-standalone-autoscaler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hyperflow
+      name: hyperflow-standalone-autoscaler
+      component: hyperflow-standalone-autoscaler
+  template:
+    metadata:
+      labels:
+        app: hyperflow
+        name: hyperflow-standalone-autoscaler
+        component: hyperflow-standalone-autoscaler
+    spec:
+      {{- with .Values.container.volumes }}
+      volumes: {{ . | toYaml | nindent 10 }}
+      {{- end }}
+      containers:
+        - name: hyperflow-standalone-autoscaler
+          image: {{ .Values.container.image }}
+          imagePullPolicy: {{ .Values.container.imagePullPolicy }}
+          {{- with .Values.resources }}
+          resources: {{ . | toYaml | nindent 12 }}
+          {{- end }}
+          env:
+          - name: HF_VAR_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          {{- with .Values.container.additionalVariables }}
+          {{ . | toYaml | nindent 10 }}
+          {{- end }}
+          {{- with .Values.container.volumeMounts }}
+          volumeMounts: {{ . | toYaml | nindent 10 }}
+          {{- end }}
+          command: {{ .Values.container.command | toYaml | nindent 10}}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{ . | toYaml | nindent 10 }}
+      {{- end }}

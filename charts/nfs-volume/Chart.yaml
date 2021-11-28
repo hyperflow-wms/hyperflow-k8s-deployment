@@ -1,6 +1,6 @@
 apiVersion: v2
-name: nfs-server
-description: A Helm chart for nfs-server
+name: nfs-storage
+description: A Helm chart for nfs volume
 type: application
 version: 0.1.0
 appVersion: 0.8

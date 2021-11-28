@@ -1,6 +1,6 @@
 containers:
   hyperflow:
-    image: hyperflowwms/hyperflow:v1.4.3
+    image: hyperflowwms/hyperflow:v1.5.7
   worker:
     image: hyperflowwms/montage2-worker:je-v1.1.1
     additionalVariables:
@@ -30,7 +30,7 @@ containers:
           while true; do sleep 5 ; done ;
         fi ;
   tools:
-    image: hyperflowwms/hflow-tools:1.2.2
+    image: hyperflowwms/hflow-tools:v1.3.0
 
 configMap:
   data:

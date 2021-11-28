@@ -1,10 +1,33 @@
 resources: {}
 
+volumes:
+- name: config-map
+  configMap:
+    name: hyperflow-config
+- name: workflow-data
+  persistentVolumeClaim:
+    claimName: nfs
+
 containers:
   hyperflow:
-    image: hyperflowwms/hyperflow:v1.5.2
+    image: hyperflowwms/hyperflow:v1.5.7
+    port: 8080
+    runAsServer: false
+    serverCommand:
+      - "/bin/sh"
+      - "-c"
+      - >
+        hflow start-server --host 0.0.0.0 --port 8080 ;
+    volumeMounts:
+    - name: workflow-data
+      mountPath: "/work_dir"
+    - name: config-map
+      mountPath: /opt/hyperflow/job-template.yaml
+      subPath: job-template.yaml
+      readOnly: true
+
   worker:
-    image: "hyperflowwms/montage2-worker"
+    image: "hyperflowwms/montage-worker"
     additionalVariables: []
     command:
       - "/bin/sh"
@@ -30,6 +53,9 @@ containers:
         fi ;
   tools:
     image: matplinta/hflow-tools:latest
+    volumeMounts:
+    - name: workflow-data
+      mountPath: "/work_dir"
 
 configMap:
   data: {}
