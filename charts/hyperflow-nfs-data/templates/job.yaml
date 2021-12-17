@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nfs-data
+spec:
+  template:
+    metadata:
+      labels:
+        app: hyperflow
+        role: nfs-data
+    spec:
+      restartPolicy: "Never"
+      containers:
+        - name: workflow-data
+          image: {{ .Values.workflow.image }}
+          imagePullPolicy: {{ .Values.workflow.imagePullPolicy}}
+          command: {{- .Values.command | toYaml | nindent 10 }}
+          volumeMounts: {{- .Values.volumeMounts | toYaml | nindent 10 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{ . | toYaml | nindent 8}}
+      {{- end }}
+      volumes: {{ .Values.volumes | toYaml | nindent 8}}
+      

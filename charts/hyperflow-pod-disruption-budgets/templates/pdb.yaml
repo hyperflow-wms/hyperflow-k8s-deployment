@@ -1,0 +1,19 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: hyperflow-pdb
+spec:
+  maxUnavailable: {{ .Values.hyperflow.maxUnavailable }}
+  selector:
+    matchLabels:
+      app: hyperflow
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nfs-server-pdb
+spec:
+  maxUnavailable: {{ .Values.nfsServer.maxUnavailable }}
+  selector:
+    matchLabels:
+      app: nfs-server-provisioner

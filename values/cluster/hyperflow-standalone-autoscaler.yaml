@@ -1,0 +1,31 @@
+container:
+  image: mbszarek/hyperflow-standalone-autoscaler:v0.12.0-8-g8a00083
+  additionalVariables:
+  - name: HF_VAR_host
+    value: "0.0.0.0"
+  - name: HV_VAR_port
+    value: "8080"
+  - name: HF_VAR_autoscalerProvider
+    value: "gcp"
+  - name: HF_VAR_autoscalerPolicy
+    value: "predict"
+  - name: HF_VAR_autoscalerMachineType
+    value: "n1_highcpu_8"
+  - name: HF_VAR_autoscalerEstimator
+    value: "process"
+  - name: HF_VAR_MAX_MACHINES
+    value: '12'
+  - name: GOOGLE_APPLICATION_CREDENTIALS
+    value: /hyperflow-standalone-autoscaler/google/key.json
+  volumes:
+  - name: google-cloud-key
+    secret:
+      secretName: kube-cluster-key
+  volumeMounts:
+  - name: google-cloud-key
+    mountPath: /hyperflow-standalone-autoscaler/google
+  port: 8080
+  
+
+nodeSelector:
+  cloud.google.com/gke-nodepool: hfmaster

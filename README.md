@@ -71,7 +71,7 @@ Note that all job variables have default values which will be used if not overri
 
 ### Setting up the cluster the Helm way
 
-Firstly, make sure your k8s context and namespaces point to right cluster. Then, setup the helm on your cluster using `helm init --history-max 50`.
+Firstly, make sure your k8s context and namespaces point to right cluster.
 
 There are several details you should know before installing Hyperflow on your cluster:
 
@@ -101,9 +101,10 @@ If you don't want to use labels, you can use values from `minikube` directory th
 ### Installing resources
 Assuming you are in repository main directory, install Kubernetes resources as follows:
 ```
-helm install nfs-server charts/nfs-server --values values/cluster/nfs-server.yml
+helm install nfs-server-provisioner charts/nfs-ganesha-server-and-external-provisioner/charts/nfs-server-provisioner --values values/cluster/nfs-server-provisioner.yml
+helm install nfs-storage charts/nfs-storage --values values/cluster/nfs-storage.yml
 helm install redis charts/redis --values values/cluster/redis.yml
-helm install hyperflow-endinge charts/hyperflow-engine --values values/cluster/hyperflow-engine.yml
+helm install hyperflow-engine charts/hyperflow-engine --values values/cluster/hyperflow-engine.yml
 ```
 
 The default configuration runs a small Montage workflow. To change this, configure workflow *worker container* in `values/cluster/hyperflow-engine.yml` and *data container* in `values/cluster/nfs-server.yml`.

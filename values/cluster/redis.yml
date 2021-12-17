@@ -1,2 +1,2 @@
 nodeSelector:
-  nodetype: hfmaster
+  cloud.google.com/gke-nodepool: hfmaster

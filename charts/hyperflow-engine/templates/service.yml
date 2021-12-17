@@ -1,0 +1,15 @@
+{{- if and (.Values.containers.hyperflow.runAsServer) (.Values.containers.hyperflow.port)  }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: hyperflow-engine
+spec:
+  ports:
+    - name: hyperflow-engine
+      port: {{ .Values.containers.hyperflow.port }}
+      targetPort: {{ .Values.containers.hyperflow.port }}
+  selector:
+    app: hyperflow
+    name: hyperflow-engine
+    component: hyperflow-engine
+{{- end }}

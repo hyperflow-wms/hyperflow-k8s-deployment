@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nfs-data-1
+spec:
+  template:
+    metadata:
+      labels:
+        app: hyperflow
+        role: nfs-data-1
+    spec:
+      restartPolicy: "Never"
+      containers:
+        - name: workflow-data
+          image: hyperflowwms/montage2-workflow-data:montage2-dss-3.0-410c387254084717cfb300d881f7047d
+          imagePullPolicy: IfNotPresent
+          command:
+            - "/bin/sh"
+            - "-c"
+            - >
+              echo "Mounting..." ;
+              cp -rv /data/* /workflow-data ;
+              sed -i 's/exit/noop/g' /workflow-data/workflow.json ;
+              echo "Volume mounted" ;
+          volumeMounts: 
+            - mountPath: /workflow-data
+              name: workflow-data
+      nodeSelector: 
+        cloud.google.com/gke-nodepool: hfmaster
+      volumes:
+        - name: workflow-data
+          persistentVolumeClaim:
+            claimName: nfs
+
+      

@@ -6,10 +6,12 @@ spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
+      app: hyperflow
       name: redis
   template:
     metadata:
       labels:
+        app: hyperflow
         name: redis
     spec:
       containers:

@@ -1,0 +1,26 @@
+# Default values for nfs-server.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+workflow:
+  image: matplinta/montage-workflow-data:degree2.0
+  imagePullPolicy: Always
+  command:
+  - "/bin/sh"
+  - "-c"
+  - >
+    echo "Mounting..." ;
+    cp -rv /data/* /workflow-data ;
+    sed -i 's/exit/noop/g' /workflow-data/workflow.json ;
+    echo "Volume mounted" ;
+
+
+volumeMounts:
+  - mountPath: /workflow-data
+    name: workflow-data
+
+volumes:
+  - name: workflow-data
+    persistentVolumeClaim:
+      claimName: nfs
+
+nodeSelector: {}

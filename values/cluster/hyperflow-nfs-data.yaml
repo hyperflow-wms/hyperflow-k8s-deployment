@@ -1,0 +1,6 @@
+nodeSelector:
+  cloud.google.com/gke-nodepool: hfmaster
+
+volumeMounts:
+  - mountPath: /workflow-data
+    name: workflow-data
