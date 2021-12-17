@@ -102,7 +102,7 @@ If you don't want to use labels, you can use values from `minikube` directory th
 Assuming you are in repository main directory, install Kubernetes resources as follows:
 ```
 helm install nfs-server-provisioner charts/nfs-ganesha-server-and-external-provisioner/charts/nfs-server-provisioner --values values/cluster/nfs-server-provisioner.yml
-helm install nfs-storage charts/nfs-storage --values values/cluster/nfs-storage.yml
+helm install nfs-pv charts/nfs-volume --values values/cluster/nfs-volume.yaml
 helm install redis charts/redis --values values/cluster/redis.yml
 helm install hyperflow-engine charts/hyperflow-engine --values values/cluster/hyperflow-engine.yml
 ```
