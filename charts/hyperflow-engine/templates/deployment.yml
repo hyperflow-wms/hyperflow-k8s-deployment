@@ -26,7 +26,7 @@ spec:
           env:
           - name: REDIS_URL
             # Change that value to reflect your and namespace and cluster FQDN
-            value: redis://redis.default.svc.cluster.local:6379
+            value: redis://redis.{{ .Release.Namespace }}.svc.{{ .Values.kubernetesDNSDomain }}:6379
           - name: HF_VAR_function
             # The source of this function can be found here
             # https://github.com/hyperflow-wms/hyperflow/blob/master/functions/kubernetes/k8sCommand.js

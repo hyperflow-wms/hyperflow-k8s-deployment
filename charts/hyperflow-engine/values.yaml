@@ -62,3 +62,5 @@ configMap:
 
 # You might want to pecify node selector if working on fully-grown cluster
 nodeSelector: {}
+
+kubernetesDNSDomain: cluster.local
