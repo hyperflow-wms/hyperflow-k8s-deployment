@@ -104,12 +104,14 @@ Assuming you are in repository main directory, install Kubernetes resources as f
 helm install nfs-server-provisioner charts/nfs-ganesha-server-and-external-provisioner/charts/nfs-server-provisioner --values values/cluster/nfs-server-provisioner.yml
 helm install nfs-pv charts/nfs-volume --values values/cluster/nfs-volume.yaml
 helm install redis charts/redis --values values/cluster/redis.yml
-helm install hyperflow-engine charts/hyperflow-engine --values values/cluster/hyperflow-engine.yml
+helm install hyperflow-nfs-data charts/hyperflow-nfs-data --values values/cluster/hyperflow-nfs-data.yaml
+helm install hyperflow-engine charts/hyperflow-engine --values values/cluster/hyperflow-engine.yaml
 ```
 
-The default configuration runs a small Montage workflow. To change this, configure workflow *worker container* in `values/cluster/hyperflow-engine.yml` and *data container* in `values/cluster/nfs-server.yml`.
+The `hyperflow-nfs-data` Helm Chart populates the NFS volume with initial data of small Montage2 workflow.
+To change this, configure the chart by setting appropriate values in file `values/cluster/hyperflow-nfs-data.yaml`.
 
-This will automatically run the workflow, unless variable `HF_VAR_DEBUG` is set to 1 in `containers.worker.additionalVariables` in file `values/cluster/hyperflow-engine.yml`. If this is the case, you can manually run the workflow as follows:
+Once all pods are up and running or completed, you can manually run the workflow as follows:
 * `kubectl exec -it <hyperflow-engine-pod> sh`
 * `cd /work_dir`
 * `hflow run .`
