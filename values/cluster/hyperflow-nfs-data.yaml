@@ -1,3 +1,6 @@
+workflow:
+  image: matplinta/montage-workflow-data:degree2.0
+
 nodeSelector:
   cloud.google.com/gke-nodepool: hfmaster
 

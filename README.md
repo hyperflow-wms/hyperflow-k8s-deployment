@@ -109,7 +109,8 @@ helm install hyperflow-engine charts/hyperflow-engine --values values/cluster/hy
 ```
 
 The `hyperflow-nfs-data` Helm Chart populates the NFS volume with initial data of small Montage2 workflow.
-To change this, configure the chart by setting appropriate values in file `values/cluster/hyperflow-nfs-data.yaml`.
+To change this, configure the chart by setting `workflow.image` property in file `values/cluster/hyperflow-nfs-data.yaml`.
+You can use images described in **Ready-to-use images** chapter.
 
 Once all pods are up and running or completed, you can manually run the workflow as follows:
 * `kubectl exec -it <hyperflow-engine-pod> sh`
