@@ -37,7 +37,7 @@ To run the workflow without data container, you can set up an empty container an
 
 [Montage2](https://github.com/hyperflow-wms/montage2-workflow)
 * Worker container: `hyperflowwms/montage2-worker`
-* Data containers: `hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest` (small, 619 jobs), `matplinta/montage2-workflow-data:degree1.0` (large, 4846 jobs), `hyperflowwms/montage2-workflow-data:montage2-dss-3.0-latest` (very large, 31768 jobs)
+* Data containers: `hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest` (small, 619 jobs), `matplinta/montage2-workflow-data:degree1.0` (large, 4846 jobs), `hyperflowwms/montage2-workflow-data:montage2-2mass-3.0-latest` (very large, 16444 jobs), `hyperflowwms/montage2-workflow-data:montage2-dss-3.0-latest` (very large, 31768 jobs)
 
 [Soykb](https://github.com/hyperflow-wms/soykb-workflow)
 * Worker container: `hyperflowwms/soykb-worker` 
