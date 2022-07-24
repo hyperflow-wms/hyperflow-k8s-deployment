@@ -16,6 +16,40 @@ spec:
         name: hyperflow-engine
         component: hyperflow-engine
     spec:
+      {{- if .Values.initContainers.enabled }}
+      initContainers:
+        {{- if and .Values.initContainers.enabled .Values.initContainers.dataInjector.enabled }}
+        - name: data-injector
+          image: {{ .Values.initContainers.dataInjector.image }}
+          {{- with .Values.initContainers.dataInjector.command }}
+          command: {{ . | toYaml | nindent 12 }}
+          {{- end }}
+          {{- with .Values.initContainers.dataInjector.volumeMounts }}
+          volumeMounts: {{ . | toYaml | nindent 10}}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                name: hyperflow-workflow-datasource
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+        {{- end }}
+        {{- if and .Values.initContainers.enabled .Values.initContainers.dataPreprocess.enabled }}
+        - name: data-preprocess
+          image: {{ .Values.initContainers.dataPreprocess.image }}
+          {{- with .Values.initContainers.dataPreprocess.command }}
+          command: {{ . | toYaml | nindent 12 }}
+          {{- end }}
+          {{- with .Values.initContainers.dataPreprocess.volumeMounts }}
+          volumeMounts: {{ . | toYaml | nindent 10}}
+          {{- end }}
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+        {{- end }}
+      {{- end }}
       containers:
         - name: hyperflow
           image: {{ .Values.containers.hyperflow.image }}
@@ -64,7 +98,8 @@ spec:
           imagePullPolicy: Always
           resources:
             requests:
-              cpu: 0 
+              cpu: 100m
+              memory: 100Mi
           command:
             - "sh" 
             - "-c"

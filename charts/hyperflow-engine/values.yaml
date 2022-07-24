@@ -57,6 +57,66 @@ containers:
     - name: workflow-data
       mountPath: "/work_dir"
 
+initContainers:
+  enabled: false
+  dataInjector:
+    enabled: false
+    source:
+      autoGenerateSecret: true
+      secretName: hyperflow-workflow-datasource
+      s3:
+        accessKey: ""
+        secretKey: ""
+        hostname: ""
+        bucket: ""
+        filename: ""
+    image: minio/mc
+    volumeMounts:
+      - name: workflow-data
+        mountPath: "/work_dir"
+    command:
+      - "/bin/bash"
+      - "-c"
+      - >
+        echo "data-injector: invoked";
+        if [[ ! -f /work_dir/.dataInjectorFinished ]]; then
+          
+          echo "Cleaning /work_dir directory...";
+          for f in /work_dir/*
+          do
+            rm -rf $f;
+          done;
+          echo "Setting up minio client...";
+          mc alias set minio $S3_HOSTNAME $S3_ACCESS_KEY $S3_SECRET_KEY --api S3v4; 
+          echo "Downloading data...";
+          mc cp minio/$S3_BUCKET/$S3_FILENAME /work_dir/data.gz;
+          touch /work_dir/.dataInjectorFinished
+        else
+          echo "File /work_dir/.dataInjectorFinished exists";
+          echo "Downloading skipped.";
+        fi;
+        echo "data-injector: finished";
+  dataPreprocess:
+    enabled: false
+    image: alpine
+    volumeMounts:
+      - name: workflow-data
+        mountPath: "/work_dir"
+    command:
+      - "/bin/ash"
+      - "-c"
+      - >
+        echo "data-prepocess: invoked";
+        if [[ ! -f /work_dir/.dataPreprocessFinished ]]; then
+          echo "Unpacking data...";
+          tar -xvf /work_dir/data.gz -C /work_dir;
+          sed -i 's/exit/noop/g' /workflow-data/workflow.json;
+          touch /work_dir/.dataPreprocessFinished
+        else
+          echo "File /work_dir/.dataPreprocessFinished exists";
+          echo "Unpacking skipped.";
+        fi;
+        echo "data-prepocess: finished";
 configMap:
   data: {}
 
