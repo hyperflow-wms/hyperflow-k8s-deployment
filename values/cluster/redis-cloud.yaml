@@ -1,0 +1,11 @@
+auth:
+  enabled: false
+replica:
+  replicaCount: 1
+
+nodeSelector:
+  node-role.kubernetes.io/hfmaster: hfmaster
+
+configmap: |-
+  appendonly yes
+  save ""

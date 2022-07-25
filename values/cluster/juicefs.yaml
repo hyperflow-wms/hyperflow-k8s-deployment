@@ -1,0 +1,56 @@
+storageClasses:
+  - name: juicefs-sc
+    enabled: true
+    reclaimPolicy: Retain
+
+    backend:
+      name: "s3db"
+      metaurl: "redis://<host>:6379/2"
+      storage: "s3"
+      accessKey: ""
+      secretKey: ""
+      bucket: "https://<bucket>.eu-central-1.amazonaws.com"
+      formatOptions: "no-update,trash-days=0"
+      envs: "{\"JFS_NO_CHECK_OBJECT_STORAGE\":\"1\"}"
+    mountOptions:
+      - writeback
+      - writeback_cache
+      - metacache
+      - free-space-ratio=0.5
+      - max-uploads=200
+      - buffer-size=3000
+      - cache-dir=/var/jfsCache
+      - cache-size=20240
+      - prefetch=16
+      - cache-group=HYPERFLOW
+      - allow_other
+    mountPod:
+      resources:
+        limits:
+          cpu: 5000m
+          memory: 5Gi
+        requests:
+          cpu: 500m
+          memory: 500Mi
+
+spec:
+  priorityClassName: ""
+
+node:
+  tolerations: []
+  nodeSelector:
+    kubernetes.io/os: linux
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 5Gi
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+controller:
+  tolerations: []
+  nodeSelector:
+    node-role.kubernetes.io/hfmaster: hfmaster
+
+namespace: default
