@@ -1,0 +1,10 @@
+pv:
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 50Gi
+
+namespace: default
+
+nodeSelector:
+  node-role.kubernetes.io/hfworker: hfworker

@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: mountpod
+  namespace: {{ .Values.namespace }}
+  labels:
+    k8s-app: mountpod
+spec:
+  selector:
+    {{- with .Values.nodeSelector }}
+    matchLabels: {{ . | toYaml | nindent 8}}
+    {{- end }}
+  template:
+    metadata:
+      {{- with .Values.nodeSelector }}
+      labels: {{ . | toYaml | nindent 8}}
+      {{- end }}
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.14.2
+          volumeMounts:
+            - mountPath: /work_dir
+              name: pvc-juicefs
+      volumes:
+        - name: pvc-juicefs
+          persistentVolumeClaim:
+            claimName: nfs

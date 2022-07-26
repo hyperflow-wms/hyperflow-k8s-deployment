@@ -171,13 +171,44 @@ options ndots:5 timeout:1
 ## Processing logs
 After the workflow has finished, you can process its logs by starting the following Kubernetes job:
 ```
-helm upgrade --install charts/parser --values values/cluster/parser
+helm upgrade --install parser charts/parser --values values/cluster/parser.yml
 ```
 This will create a number of `jsonl` (JSON lines format) files in directory `/work_dir/parsed/<workflow_dir>`. The structure of these files is documented [here](https://github.com/hyperflow-wms/log-parser). 
 
 ## Visualization of workflow execution trace
 To generate a visualization of the workflow execution, first you need to generate the processed logs (see above), then run this Kubernetes job:
 ```
-helm upgrade --install charts/viz-trace --values values/cluster/viz-trace
+helm upgrade --install viz-trace charts/viz-trace --values values/cluster/viz-trace.yaml
 ```
 This generates a `png` file in each `/work_dir/parsed/<workflow_dir>` directory.
+
+## Configuration of two kubernetes clusters
+To run workflow on two kubernetes clusters, you can set them up on aws using [eksctl](https://eksctl.io/) command.
+```
+eksctl create cluster -f cloud/aws-private.yaml
+eksctl create cluster -f cloud/aws-public.yaml
+```
+To avoid exposing services with a public ip address, you can set up [VPC peering](https://docs.aws.amazon.com/vpc/latest/peering/what-is-vpc-peering.html) 
+according to this [guide](https://blog.couchbase.com/kubernetes-vpc-peering/).
+
+- Then, in private cluster install redis as follows:
+```
+helm install redis bitnami/redis --values values/cluster/redis-cloud.yaml
+```
+
+- Set up [juicefs object storage](https://juicefs.com/docs/community/how_to_setup_object_storage/) in
+`values/cluster/juicefs.yaml` file with one of available storage options and set up corresponding node labels followed by:
+```
+helm install juicefs-csi-driver juicefs-csi-driver/juicefs-csi-driver --values values/cluster/juicefs.yaml -n kube-system
+helm install juicefs-pv charts/juicefs-pv --values values/cluster/juicefs-pv.yaml
+helm install hyperflow-engine charts/hyperflow-engine --values values/cluster/hyperflow-engine.yaml
+```
+In order to get access to the public cluster from private cluster you can use [script](https://github.com/gravitational/teleport/blob/master/examples/gke-auth/get-kubeconfig.sh)
+to generate kubeconfig which can be used in private cluster.
+- Then, in public cluster run the following commands:
+```
+helm install juicefs-csi-driver juicefs-csi-driver/juicefs-csi-driver --values values/cluster/juicefs.yaml -n kube-system
+helm install juicefs-pv charts/juicefs-pv --values values/cluster/juicefs-pv.yaml
+kubectl create clusterrolebinding serviceaccounts-cluster-admin --clusterrole=cluster-admin --group=system:serviceaccounts
+```
+Next, you can use [hflow-tools](https://github.com/hyperflow-wms/hflow-tools#hflow-metis) to partition a workflow.

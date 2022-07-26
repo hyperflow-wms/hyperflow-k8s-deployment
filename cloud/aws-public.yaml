@@ -1,0 +1,15 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: public-cluster
+  region: eu-west-2
+
+nodeGroups:
+  - name: hfworker
+    instanceType: m5.2xlarge
+    desiredCapacity: 3
+    volumeSize: 60
+
+vpc:
+  cidr: 172.16.0.0/16
