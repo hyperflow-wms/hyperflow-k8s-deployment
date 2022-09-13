@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hflow-worker-operator
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      application: hflow-worker-operator
+  template:
+    metadata:
+      labels:
+        application: hflow-worker-operator
+    spec:
+      serviceAccountName: hflow-worker-operator-account
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: operator
+          image: kjanecki/hflow-worker-operator:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /templates
+              name: templates
+      volumes:
+        - name: templates
+          configMap:
+            name: workerpool-deployment-templates
