@@ -5,5 +5,5 @@ data:
 {{- end }}
 kind: ConfigMap
 metadata:
-  name: workerpool-deployment-templates
+  name: hyperflow-worker-pool-operator-templates
   namespace: {{ .Release.Namespace }}
