@@ -1,196 +1,15 @@
 nodeSelector:
   node-role.kubernetes.io/hfmaster: hfmaster
-image: kjanecki/hflow-worker-operator:refactor-test
-config:
-  data:
-    deployment.yml: |-
-      apiVersion: apps/v1
-      kind: Deployment
-      metadata:
-        name: {poolName}
-        namespace: {namespace}
-        labels:
-          app: {poolName}
-      spec:
-        replicas: {minReplicas}
-        selector:
-          matchLabels:
-            app: {poolName}
-        template:
-          metadata:
-            labels:
-              app: {poolName}
-          spec:
-            terminationGracePeriodSeconds: 300
-            nodeSelector:
-              node-role.kubernetes.io/hfworker: hfworker
-            containers:
-              - name: worker
-                image: {image}
-                command:
-                  - /usr/local/bin/dumb-init
-                  - --single-child
-                  - -v
-                  - --
-                  - hflow-job-listener.js
-                env:
-                  - name: QUEUE_NAME
-                    value: {queueName}
-                  - name: RABBIT_HOSTNAME
-                    value: {rabbitHostname}
-                  - name: REDIS_URL
-                    value: {redisUrl}
-                  - name: RABBIT_PREFETCH_SIZE
-                    value: '1'
-                  - name: HF_VAR_WORK_DIR
-                    value: /work_dir
-                  - name: HF_VAR_WAIT_FOR_INPUT_FILES
-                    value: "0"
-                  - name: HF_VAR_NUM_RETRIES
-                    value: "1"
-                  - name: HF_LOG_NODE_NAME
-                    valueFrom:
-                      fieldRef:
-                        apiVersion: v1
-                        fieldPath: spec.nodeName
-                  - name: HF_LOG_POD_NAME
-                    valueFrom:
-                      fieldRef:
-                        apiVersion: v1
-                        fieldPath: metadata.name
-                  - name: HF_LOG_POD_NAMESPACE
-                    valueFrom:
-                      fieldRef:
-                        apiVersion: v1
-                        fieldPath: metadata.namespace
-                  - name: HF_LOG_POD_IP
-                    valueFrom:
-                      fieldRef:
-                        apiVersion: v1
-                        fieldPath: status.podIP
-                  - name: HF_LOG_POD_SERVICE_ACCOUNT
-                    valueFrom:
-                      fieldRef:
-                        apiVersion: v1
-                        fieldPath: spec.serviceAccountName
-                  - name: HF_VAR_FS_MONIT_ENABLED
-                    value: "0"
-                  - name: HF_VAR_FS_MONIT_COMMAND
-                    value: hflow-job-execute $REDIS_URL -a -- 'Gjt5YxVCa:1:5:1' 'Gjt5YxVCa:1:6:1'
-                  - name: HF_VAR_FS_MONIT_PATH_PATTERN
-                    value: /work_dir/*
-                imagePullPolicy: Always
-                resources:
-                  requests:
-                    cpu: {cpuRequests}
-                    memory: {memoryRequests}
-                volumeMounts:
-                  - mountPath: /work_dir
-                    name: my-pvc-nfs
-                workingDir: /work_dir
-                lifecycle:
-                  preStop:
-                    exec:
-                      command: ["sh", "-c", "sleep 5"]
-            volumes:
-              - name: my-pvc-nfs
-                persistentVolumeClaim:
-                  claimName: nfs
-    prometheus-rule.yml: |-
-      apiVersion: monitoring.coreos.com/v1
-      kind: PrometheusRule
-      metadata:
-        name: {poolName}
-        namespace: {namespace}
-        labels:
-          prometheus: kube-prometheus # This label is configured as port of the installation of the prometheus operator
-          release: monitoring
-      spec:
-        groups:
-          - name: "{poolName}-replication-factor" # Define the name of your rule
-            interval: 3s
-            rules:
-              - record: {poolNameUnderscored}:replication_factor # The name of the metrics you want
-                expr: |
-                  ceil(  
-                    sum(
-                      (
-                        rabbitmq_queue_messages_ready{{endpoint="rabbitmq-exporter", queue="{queueName}"}}
-                        + 
-                        rabbitmq_queue_messages_unacknowledged{{endpoint="rabbitmq-exporter", queue="{queueName}"}}
-                      ) or vector(0)
-                    )
-                    / max(last_over_time(rabbitmq_queue_messages_total{{endpoint="rabbitmq-exporter"}}[15s]) or vector(1))
-                    *
-                    min(
-                      floor(kube_resourcequota{{namespace="{namespace}", resource="requests.cpu", type="hard"}} / {cpuLimits}) 
-                      or
-                      floor(kube_resourcequota{{namespace="{namespace}", resource="requests.memory", type="hard"}} / {memoryLimits})
-                    )
-                  )
-                labels:
-                  namespace: default
-                  service: {poolName}
-    scaledobject.yml: |-
-      apiVersion: keda.sh/v1alpha1
-      kind: ScaledObject
-      metadata:
-        name: {poolName}
-        namespace: {namespace}
-        labels:
-          name: {poolName}
-      spec:
-        scaleTargetRef:
-          name: {poolName}
-        pollingInterval: 3
-        cooldownPeriod:  120
-        minReplicaCount: {minReplicaCount}
-        maxReplicaCount: 100
-        triggers:
-          - type: prometheus
-            metadata:
-              serverAddress: http://monitoring-prometheus.default:9090
-              metricName: {poolNameUnderscored}:replication_factor
-              threshold: '1'
-              query: {poolNameUnderscored}:replication_factor{{}}
-        advanced:
-          horizontalPodAutoscalerConfig:
-            behavior:
-              scaleUp:
-                stabilizationWindowSeconds: 0
-                policies:
-                  - periodSeconds: 5
-                    type: Pods
-                    value: 50
-              scaleDown:
-                stabilizationWindowSeconds: 0
-                policies:
-                  - periodSeconds: 30
-                    type: Pods
-                    value: 50
 
 prometheus-adapter:
   enabled: true
   nodeSelector:
     node-role.kubernetes.io/hfmaster: hfmaster
-  prometheus:
-    url: http://monitoring-prometheus
-    port: 9090
 
 prometheus-rabbitmq-exporter:
   enabled: true
   nodeSelector:
     node-role.kubernetes.io/hfmaster: hfmaster
-  prometheus:
-    monitor:
-      enabled: true
-      additionalLabels:
-        release: worker-pools-operator
-      interval: 5s
-    rules:
-      enabled: true
-  rabbitmq:
-    url: http://rabbitmq:15672
 
 keda:
   enabled: true
@@ -198,118 +17,29 @@ keda:
     node-role.kubernetes.io/hfmaster: hfmaster
 
 rabbitmq:
-  fullnameOverride: rabbitmq
   enabled: true
   nodeSelector:
     node-role.kubernetes.io/hfmaster: hfmaster
-  replicaCount: 1
-
-  persistence:
-    enabled: false
-
   auth:
     username: guest
     password: guest
     erlangCookie: jiwng4pw7NJL3KutMb4pF7k6C5RphXYU
 
-  metrics:
-    enabled: true
-    plugins: "rabbitmq_prometheus"
-    serviceMonitor:
-      enabled: true
-      labels:
-        release: worker-pools-operator
-        app.kubernetes.io/component: metrics
-
 kube-prometheus-stack:
-  fullnameOverride: monitoring
   enabled: true
-  defaultRules:
-    create: true
-    rules:
-      alertmanager: false
-      etcd: false
-      configReloaders: false
-      general: true
-      k8s: true
-      kubeApiserver: true
-      kubeApiserverAvailability: false
-      kubeApiserverSlos: false
-      kubelet: true
-      kubeProxy: false
-      kubePrometheusGeneral: true
-      kubePrometheusNodeRecording: true
-      kubernetesApps: true
-      kubernetesResources: true
-      kubernetesStorage: true
-      kubernetesSystem: true
-      kubeScheduler: false
-      kubeStateMetrics: true
-      network: true
-      node: true
-      nodeExporterAlerting: false
-      nodeExporterRecording: true
-      prometheus: true
-      prometheusOperator: true
-
-    appNamespacesTarget: ".*"
-
-  global:
-    rbac:
-      create: true
-      pspEnabled: false
-      pspAnnotations: {}
 
   alertmanager:
     enabled: false
 
   grafana:
     enabled: true
-    namespaceOverride: ""
     adminPassword: admin
     nodeSelector:
       node-role.kubernetes.io/hfmaster: hfmaster
 
-  kubeApiServer:
-    enabled: true
-
-  kubelet:
-    enabled: true
-
-  kubeControllerManager:
-    enabled: false
-
-  coreDns:
-    enabled: false
-
-  kubeDns:
-    enabled: false
-
-  kubeEtcd:
-    enabled: false
-
-  kubeScheduler:
-    enabled: false
-
-  kubeProxy:
-    enabled: false
-
-  kubeStateMetrics:
-    enabled: true
-
   kube-state-metrics:
-    namespaceOverride: ""
-    rbac:
-      create: true
-    releaseLabel: true
-    prometheus:
-      monitor:
-        enabled: true
     nodeSelector:
       node-role.kubernetes.io/hfmaster: hfmaster
-
-  nodeExporter:
-    enabled: true
 
   prometheusOperator:
     enabled: true
@@ -319,8 +49,5 @@ kube-prometheus-stack:
   prometheus:
     enabled: true
     prometheusSpec:
-      scrapeInterval: 5s
       nodeSelector:
         node-role.kubernetes.io/hfmaster: hfmaster
-      ruleSelectorNilUsesHelmValues: false
-

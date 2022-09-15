@@ -1,6 +1,5 @@
-nodeSelector:
-  node-role.kubernetes.io/hfmaster: hfmaster
-image: kjanecki/hflow-worker-operator:refactor-test
+nodeSelector: {}
+image: kjanecki/hflow-worker-operator:1.0.0
 config:
   data:
     deployment.yml: |-
@@ -112,15 +111,17 @@ config:
             rules:
               - record: {poolNameUnderscored}:replication_factor # The name of the metrics you want
                 expr: |
-                  ceil(  
+                  ceil(
+                    0.9
+                    *  
                     sum(
                       (
-                        rabbitmq_queue_messages_ready{{job="amqp-metrics", queue="{queueName}"}}
+                        rabbitmq_queue_messages_ready{{endpoint="rabbitmq-exporter", queue="{queueName}"}}
                         + 
-                        rabbitmq_queue_messages_unacknowledged{{job="amqp-metrics", queue="{queueName}"}}
+                        rabbitmq_queue_messages_unacknowledged{{endpoint="rabbitmq-exporter", queue="{queueName}"}}
                       ) or vector(0)
                     )
-                    / sum(last_over_time(rabbitmq_queue_messages_total{{job="amqp-metrics"}}[15s]) or vector(1))
+                    / max(last_over_time(rabbitmq_queue_messages_total{{endpoint="rabbitmq-exporter"}}[15s]) or vector(1))
                     *
                     min(
                       floor(kube_resourcequota{{namespace="{namespace}", resource="requests.cpu", type="hard"}} / {cpuLimits}) 
@@ -149,7 +150,7 @@ config:
         triggers:
           - type: prometheus
             metadata:
-              serverAddress: http://monitoring-prometheus.default:9090
+              serverAddress: {prometheusUrl}
               metricName: {poolNameUnderscored}:replication_factor
               threshold: '1'
               query: {poolNameUnderscored}:replication_factor{{}}
@@ -171,17 +172,139 @@ config:
 
 prometheus-adapter:
   enabled: false
+  prometheus:
+    url: http://monitoring-prometheus
+    port: 9090
 
 prometheus-rabbitmq-exporter:
   enabled: false
+  prometheus:
+    monitor:
+      enabled: true
+      additionalLabels:
+        release: worker-pools-operator
+      interval: 5s
+    rules:
+      enabled: true
+  rabbitmq:
+    url: http://rabbitmq:15672
 
 keda:
   enabled: false
 
 rabbitmq:
   enabled: false
+  fullnameOverride: rabbitmq
+  replicaCount: 1
+
+  persistence:
+    enabled: false
+
+  auth:
+    username: guest
+    password: guest
+    erlangCookie: jiwng4pw7NJL3KutMb4pF7k6C5RphXYU
+
   metrics:
+    enabled: true
+    plugins: "rabbitmq_prometheus"
     serviceMonitor:
+      enabled: true
+      labels:
+        release: worker-pools-operator
+        app.kubernetes.io/component: metrics
 
 kube-prometheus-stack:
-  enabled: true
+  enabled: false
+  fullnameOverride: monitoring
+  defaultRules:
+    create: true
+    rules:
+      alertmanager: false
+      etcd: false
+      configReloaders: false
+      general: true
+      k8s: true
+      kubeApiserver: true
+      kubeApiserverAvailability: false
+      kubeApiserverSlos: false
+      kubelet: true
+      kubeProxy: false
+      kubePrometheusGeneral: true
+      kubePrometheusNodeRecording: true
+      kubernetesApps: true
+      kubernetesResources: true
+      kubernetesStorage: true
+      kubernetesSystem: true
+      kubeScheduler: false
+      kubeStateMetrics: true
+      network: true
+      node: true
+      nodeExporterAlerting: false
+      nodeExporterRecording: true
+      prometheus: true
+      prometheusOperator: true
+
+    appNamespacesTarget: ".*"
+
+  global:
+    rbac:
+      create: true
+      pspEnabled: false
+      pspAnnotations: {}
+
+  alertmanager:
+    enabled: false
+
+  grafana:
+    enabled: true
+    namespaceOverride: ""
+    adminPassword: admin
+
+  kubeApiServer:
+    enabled: true
+
+  kubelet:
+    enabled: true
+
+  kubeControllerManager:
+    enabled: false
+
+  coreDns:
+    enabled: false
+
+  kubeDns:
+    enabled: false
+
+  kubeEtcd:
+    enabled: false
+
+  kubeScheduler:
+    enabled: false
+
+  kubeProxy:
+    enabled: false
+
+  kubeStateMetrics:
+    enabled: true
+
+  kube-state-metrics:
+    namespaceOverride: ""
+    rbac:
+      create: true
+    releaseLabel: true
+    prometheus:
+      monitor:
+        enabled: true
+
+  nodeExporter:
+    enabled: true
+
+  prometheusOperator:
+    enabled: true
+
+  prometheus:
+    enabled: true
+    prometheusSpec:
+      scrapeInterval: 5s
+      ruleSelectorNilUsesHelmValues: false

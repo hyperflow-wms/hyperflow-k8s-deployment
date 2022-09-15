@@ -23,6 +23,8 @@ spec:
                   type: string
                 redisUrl:
                   type: string
+                prometheusUrl:
+                  type: string
                 queueName:
                   type: string
                 minReplicaCount:
@@ -30,6 +32,7 @@ spec:
                   default: 0
                 maxReplicaCount:
                   type: integer
+                  default: 50
                 initialResources:
                   type: object
                   properties:
@@ -57,6 +60,7 @@ spec:
                 - image
                 - rabbitHostname
                 - redisUrl
+                - prometheusUrl
                 - initialResources
             status:
               type: object
