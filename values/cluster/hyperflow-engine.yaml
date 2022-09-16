@@ -33,6 +33,22 @@ containers:
   tools:
     image: hyperflowwms/hflow-tools:v1.3.0
 
+## Example initContainers settings for downloading and preprocessing workflow data from s3 datasource
+#initContainers:
+#  enabled: true
+#  dataInjector:
+#    enabled: true
+#    source:
+#      autoGenerateSecret: true
+#      s3:
+#        accessKey: "access-key"
+#        secretKey: "secret-key"
+#        hostname: "hostname"
+#        bucket: "hyperflow-data"
+#        filename: "montage2-2mass-3.0-latest.gz"
+#  dataPreprocess:
+#    enabled: true
+
 nodeSelector:
   cloud.google.com/gke-nodepool: hfmaster
 
