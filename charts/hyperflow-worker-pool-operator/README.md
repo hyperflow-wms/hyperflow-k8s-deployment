@@ -44,11 +44,11 @@ Example settings are presented on `/values/cluster/hyperflow-worker-pool-operato
 | `prometheus-rabbitmq-exporter` | https://prometheus-community.github.io/helm-charts  | Expose additional RabbitMQ metrics like individual queue message count |
 | `keda`                         | https://kedacore.github.io/charts                   | Manage HPA and provide ability to scale to zero                        |
 
+### Create WorkerPool resources
 
-## WorkerPool Custom Resource reference
+Current implementation of Operator uses `ResourceQuota` to control the maximum amount of allocatable resources, so ensure that a `ResourceQuota` object is created in target namespace. After creating `ResourceQuta` you can create `WorkerPool` resources.
 
-### Example WorkerPool manifest:
-
+Example WorkerPool manifest:
 ```
 apiVersion: hyperflow.agh.edu.pl/v1
 kind: WorkerPool
@@ -71,7 +71,7 @@ spec:
       memory: "524288000"
 ```
 
-### WorkerPool parameters
+## WorkerPool Custom Resource reference
 
 | Name                                    | Description                                                              |
 |-----------------------------------------|--------------------------------------------------------------------------|
