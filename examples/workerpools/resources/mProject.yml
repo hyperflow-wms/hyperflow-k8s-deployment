@@ -1,0 +1,16 @@
+apiVersion: hyperflow.agh.edu.pl/v1
+kind: WorkerPool
+metadata:
+  name: mproject
+spec:
+  taskType: mProject
+  image: kjanecki/montage2-worker:worker-pools
+  rabbitHostname: rabbitmq.default
+  prometheusUrl: http://monitoring-prometheus.default:9090
+  redisUrl: redis://redis:6379
+  minReplicaCount: 0
+  maxReplicaCount: 50
+  initialResources:
+    requests:
+      cpu: "0.5"
+      memory: "524288000"

@@ -1,0 +1,53 @@
+nodeSelector:
+  node-role.kubernetes.io/hfmaster: hfmaster
+
+prometheus-adapter:
+  enabled: true
+  nodeSelector:
+    node-role.kubernetes.io/hfmaster: hfmaster
+
+prometheus-rabbitmq-exporter:
+  enabled: true
+  nodeSelector:
+    node-role.kubernetes.io/hfmaster: hfmaster
+
+keda:
+  enabled: true
+  nodeSelector:
+    node-role.kubernetes.io/hfmaster: hfmaster
+
+rabbitmq:
+  enabled: true
+  nodeSelector:
+    node-role.kubernetes.io/hfmaster: hfmaster
+  auth:
+    username: guest
+    password: guest
+    erlangCookie: jiwng4pw7NJL3KutMb4pF7k6C5RphXYU
+
+kube-prometheus-stack:
+  enabled: true
+
+  alertmanager:
+    enabled: false
+
+  grafana:
+    enabled: true
+    adminPassword: admin
+    nodeSelector:
+      node-role.kubernetes.io/hfmaster: hfmaster
+
+  kube-state-metrics:
+    nodeSelector:
+      node-role.kubernetes.io/hfmaster: hfmaster
+
+  prometheusOperator:
+    enabled: true
+    nodeSelector:
+      node-role.kubernetes.io/hfmaster: hfmaster
+
+  prometheus:
+    enabled: true
+    prometheusSpec:
+      nodeSelector:
+        node-role.kubernetes.io/hfmaster: hfmaster
