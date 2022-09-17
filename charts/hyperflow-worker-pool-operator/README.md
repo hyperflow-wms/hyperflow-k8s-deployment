@@ -87,6 +87,30 @@ spec:
 | `spec.initialResources.limits.cpu`      | [Optional] CPU limit for Worker Pool pods. Must be specified in vCPUs    |
 | `spec.initialResources.limits.memory`   | [Optional] Memory limit for Worker Pool pods. Must be specified in bytes |
 
+### Configure Hyperflow engine for worker pools
+
+Hyperflow engine controls execution model with optional config file `workflow.config.executionModels.json` 
+that can be created in `/work_dir` directory. By default, Hyperflow executes tasks using job-based execution model.
+Adding a record with the `name` parameter set with the type of tasks to the `workflow.config.executionModels.json`
+will override this setting and change the execution model to worker pools. Optional `queue` parameter
+is also available to override the name of the queue (default: <namespace>.<task_type_name>)
+
+Example `workflow.config.executionModels.json` that configure Hyperflow engine to run worker pools
+for mProject, mDiffFit and mBackground tasks:
+```
+[
+  {
+    "name": "mProject"
+  },
+  {
+    "name": "mDiffFit"
+  },
+  {
+    "name": "mBackground"
+  }
+]
+```
+
 ## Troubleshooting
 
 After creation or update of any `WorkerPool` object, the Worker Pool Operator updates the `status` of processed resource. 
