@@ -23,6 +23,9 @@ rules:
   - apiGroups: [""]
     resources: [namespaces]
     verbs: [list, watch]
+  - apiGroups: [ "" ]
+    resources: [ events ]
+    verbs: [ create ]
 
   # Framework: admission webhook configuration management.
   - apiGroups: [admissionregistration.k8s.io/v1, admissionregistration.k8s.io/v1]
@@ -30,14 +33,18 @@ rules:
     verbs: [create, patch]
 
   # Application: read-only access for watching cluster-wide.
-  - apiGroups: [kopf.dev]
-    resources: [hyperflow-worker-pool-operators]
-    verbs: [list, watch]
-
-  # Application: read-only access for watching cluster-wide.
-  - apiGroups: [hyperflow.agh.edu.pl]
-    resources: [workerpools]
-    verbs: [get, list, watch, patch]
+  - apiGroups: [ hyperflow.agh.edu.pl ]
+    resources: [ workerpools ]
+    verbs: [ get, list, watch, patch ]
+  - apiGroups: ["apps"]
+    resources: [deployments]
+    verbs: [get, list, watch, patch, create, delete]
+  - apiGroups: ["monitoring.coreos.com"]
+    resources: [prometheusrules]
+    verbs: [get, list, watch, patch, create, delete]
+  - apiGroups: ["keda.sh"]
+    resources: [scaledobjects]
+    verbs: [get, list, watch, patch, create, delete]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -46,31 +53,23 @@ metadata:
   name: hyperflow-worker-pool-operator-role-namespaced
 rules:
 
-  # Framework: knowing which other operators are running (i.e. peering).
-  - apiGroups: [kopf.dev]
-    resources: [kopfpeerings]
-    verbs: [list, watch, patch, get]
-
   # Framework: posting the events about the handlers progress/errors.
   - apiGroups: [""]
     resources: [events]
     verbs: [create]
 
   # Application: watching & handling for the custom resource we declare.
-  - apiGroups: [kopf.dev]
-    resources: [hyperflow-worker-pool-operators]
-    verbs: [list, watch, patch]
-
-  # Application: other resources it produces and manipulates.
-  # Here, we create Jobs+PVCs+Pods, but we do not patch/update/delete them ever.
-  - apiGroups: [batch, extensions]
-    resources: [jobs]
-    verbs: [create]
-  - apiGroups: [""]
-    resources: [pods, persistentvolumeclaims]
-    verbs: [create]
+  - apiGroups: [ hyperflow.agh.edu.pl ]
+    resources: [ workerpools ]
+    verbs: [ get, list, watch, patch ]
   - apiGroups: ["apps"]
     resources: [deployments]
+    verbs: [get, list, watch, patch, create, delete]
+  - apiGroups: ["monitoring.coreos.com"]
+    resources: [prometheusrules]
+    verbs: [get, list, watch, patch, create, delete]
+  - apiGroups: ["keda.sh"]
+    resources: [scaledobjects]
     verbs: [get, list, watch, patch, create, delete]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
