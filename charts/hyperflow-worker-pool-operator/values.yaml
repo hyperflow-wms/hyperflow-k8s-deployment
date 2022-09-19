@@ -1,5 +1,5 @@
 nodeSelector: {}
-image: kjanecki/hflow-worker-operator:1.0.0
+image: hyperflowwms/worker-pool-operator:v1.0.0
 config:
   data:
     deployment.yml: |-
