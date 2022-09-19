@@ -11,11 +11,11 @@ based on various metrics.
 
 Install manifest with helm:
 ```
-helm install --namespace default worker-pool-operator .
+helm upgrade -i --debug  --namespace default worker-pool-operator .
 ```
 Uninstall:
 ```
-helm uninstall --namespace default worker-pool-operator
+helm upgrade -i --debug  --namespace default worker-pool-operator
 ```
 ### Chart parameters:
 
