@@ -1,5 +1,5 @@
 workflow:
-  image: matplinta/montage-workflow-data:degree2.0
+  image: hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest
 
 nodeSelector:
   hyperflow-wms/nodepool: hfmaster
