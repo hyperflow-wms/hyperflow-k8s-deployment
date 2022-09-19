@@ -56,7 +56,7 @@ metadata:
   name: mproject
 spec:
   taskType: mProject
-  image: kjanecki/montage2-amqp:latest
+  image: hyperflowwms/montage2-worker:je-1.3.0
   rabbitHostname: rabbitmq.default
   prometheusUrl: http://monitoring-prometheus.default:9090
   redisUrl: redis://redis:6379

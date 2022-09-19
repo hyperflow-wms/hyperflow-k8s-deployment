@@ -16,7 +16,7 @@ containers:
       - >
         hflow start-server --host 0.0.0.0 --port 8080 ;
   worker:
-    image: mbszarek/montage2-worker:je-1.1.6
+    image: hyperflowwms/montage2-worker:je-1.3.0
     additionalVariables:
       - name: HF_VAR_DEBUG
         value: "0"
