@@ -20,6 +20,10 @@ spec:
           ports:
             - containerPort: {{ .Values.container.port }}
               name: redis
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
       {{- with .Values.nodeSelector }}
       nodeSelector: {{ . | toYaml | nindent 8}}
       {{- end }}

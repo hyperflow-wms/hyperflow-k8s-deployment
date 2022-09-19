@@ -16,6 +16,10 @@ spec:
           imagePullPolicy: {{ .Values.workflow.imagePullPolicy}}
           command: {{- .Values.workflow.command | toYaml | nindent 10 }}
           volumeMounts: {{- .Values.volumeMounts | toYaml | nindent 10 }}
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
       {{- with .Values.nodeSelector }}
       nodeSelector: {{ . | toYaml | nindent 8}}
       {{- end }}
