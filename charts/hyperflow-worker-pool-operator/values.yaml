@@ -211,7 +211,7 @@ rabbitmq:
     serviceMonitor:
       enabled: true
       labels:
-        release: worker-pools-operator
+        release: worker-pool-operator
         app.kubernetes.io/component: metrics
 
 kube-prometheus-stack:
