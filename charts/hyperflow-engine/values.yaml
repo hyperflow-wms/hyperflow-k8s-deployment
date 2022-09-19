@@ -10,7 +10,7 @@ volumes:
 
 containers:
   hyperflow:
-    image: hyperflowwms/hyperflow:v1.5.7
+    image: hyperflowwms/hyperflow:v1.6.0
     port: 8080
     runAsServer: false
     serverCommand:

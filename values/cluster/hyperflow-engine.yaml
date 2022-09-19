@@ -8,7 +8,7 @@ resources:
 
 containers:
   hyperflow:
-    image: mbszarek/hyperflow:v1.5.7-19-g014a496
+    image: hyperflowwms/hyperflow:v1.6.0
     runAsServer: true
     serverCommand:
       - "/bin/sh"
