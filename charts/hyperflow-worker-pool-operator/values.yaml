@@ -22,7 +22,7 @@ config:
           spec:
             terminationGracePeriodSeconds: 300
             nodeSelector:
-              node-role.kubernetes.io/hfworker: hfworker
+              hyperflow-wms/nodepool: hfworker
             containers:
               - name: worker
                 image: {image}

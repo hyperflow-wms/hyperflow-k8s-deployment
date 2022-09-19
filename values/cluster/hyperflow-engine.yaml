@@ -50,7 +50,7 @@ containers:
 #    enabled: true
 
 nodeSelector:
-  cloud.google.com/gke-nodepool: hfmaster
+  hyperflow-wms/nodepool: hfmaster
 
 configMap:
   data:
@@ -125,7 +125,7 @@ configMap:
                   - name: my-pvc-nfs
                     mountPath: ${volumePath}
                 nodeSelector:
-                  cloud.google.com/gke-nodepool: default-pool
+                  hyperflow-wms/nodepool: default-pool
                 volumes:
                 - name: workflow-data
                   emptyDir: {}

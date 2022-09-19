@@ -4,7 +4,7 @@ replica:
   replicaCount: 1
 
 nodeSelector:
-  node-role.kubernetes.io/hfmaster: hfmaster
+  hyperflow-wms/nodepool: hfmaster
 
 configmap: |-
   appendonly yes

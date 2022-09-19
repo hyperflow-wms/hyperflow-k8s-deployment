@@ -28,4 +28,4 @@ container:
   
 
 nodeSelector:
-  cloud.google.com/gke-nodepool: hfmaster
+  hyperflow-wms/nodepool: hfmaster

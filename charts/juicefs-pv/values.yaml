@@ -7,4 +7,4 @@ pv:
 namespace: default
 
 nodeSelector:
-  node-role.kubernetes.io/hfworker: hfworker
+  hyperflow-wms/nodepool: hfworker
