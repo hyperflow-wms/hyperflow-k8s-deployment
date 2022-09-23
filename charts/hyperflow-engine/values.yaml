@@ -10,7 +10,7 @@ volumes:
 
 containers:
   hyperflow:
-    image: hyperflowwms/hyperflow:v1.5.7
+    image: hyperflowwms/hyperflow:v1.6.0
     port: 8080
     runAsServer: false
     serverCommand:
@@ -123,4 +123,3 @@ configMap:
 # You might want to pecify node selector if working on fully-grown cluster
 nodeSelector: {}
 
-kubernetesDNSDomain: cluster.local

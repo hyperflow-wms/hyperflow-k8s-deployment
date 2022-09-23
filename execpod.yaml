@@ -23,7 +23,7 @@ spec:
       name: my-pvc-nfs
     workingDir: /work_dir
   nodeSelector:
-    cloud.google.com/gke-nodepool: hfmaster
+    hyperflow-wms/nodepool: hfmaster
   restartPolicy: Never
   volumes:
   - name: my-pvc-nfs

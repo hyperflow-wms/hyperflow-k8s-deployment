@@ -101,11 +101,11 @@ If you don't want to use labels, you can use values from `minikube` directory th
 ### Installing resources
 Assuming you are in repository main directory, install Kubernetes resources as follows:
 ```
-helm install nfs-server-provisioner charts/nfs-ganesha-server-and-external-provisioner/charts/nfs-server-provisioner --values values/cluster/nfs-server-provisioner.yml
-helm install nfs-pv charts/nfs-volume --values values/cluster/nfs-volume.yaml
-helm install redis charts/redis --values values/cluster/redis.yml
-helm install hyperflow-nfs-data charts/hyperflow-nfs-data --values values/cluster/hyperflow-nfs-data.yaml
-helm install hyperflow-engine charts/hyperflow-engine --values values/cluster/hyperflow-engine.yaml
+helm upgrade -i nfs-server-provisioner charts/nfs-ganesha-server-and-external-provisioner/charts/nfs-server-provisioner --values values/cluster/nfs-server-provisioner.yml
+helm upgrade -i nfs-pv charts/nfs-volume --values values/cluster/nfs-volume.yaml
+helm upgrade -i redis charts/redis --values values/cluster/redis.yml
+helm upgrade -i hyperflow-nfs-data charts/hyperflow-nfs-data --values values/cluster/hyperflow-nfs-data.yaml
+helm upgrade -i hyperflow-engine charts/hyperflow-engine --values values/cluster/hyperflow-engine.yaml
 ```
 
 The `hyperflow-nfs-data` Helm Chart populates the NFS volume with initial data of small Montage2 workflow.
@@ -193,22 +193,22 @@ according to this [guide](https://blog.couchbase.com/kubernetes-vpc-peering/).
 
 - Then, in private cluster install redis as follows:
 ```
-helm install redis bitnami/redis --values values/cluster/redis-cloud.yaml
+helm upgrade -i redis bitnami/redis --values values/cluster/redis-cloud.yaml
 ```
 
 - Set up [juicefs object storage](https://juicefs.com/docs/community/how_to_setup_object_storage/) in
 `values/cluster/juicefs.yaml` file with one of available storage options and set up corresponding node labels followed by:
 ```
-helm install juicefs-csi-driver juicefs-csi-driver/juicefs-csi-driver --values values/cluster/juicefs.yaml -n kube-system
-helm install juicefs-pv charts/juicefs-pv --values values/cluster/juicefs-pv.yaml
-helm install hyperflow-engine charts/hyperflow-engine --values values/cluster/hyperflow-engine.yaml
+helm upgrade -i juicefs-csi-driver juicefs-csi-driver/juicefs-csi-driver --values values/cluster/juicefs.yaml -n kube-system
+helm upgrade -i juicefs-pv charts/juicefs-pv --values values/cluster/juicefs-pv.yaml
+helm upgrade -i hyperflow-engine charts/hyperflow-engine --values values/cluster/hyperflow-engine.yaml
 ```
 In order to get access to the public cluster from private cluster you can use [script](https://github.com/gravitational/teleport/blob/master/examples/gke-auth/get-kubeconfig.sh)
 to generate kubeconfig which can be used in private cluster.
 - Then, in public cluster run the following commands:
 ```
-helm install juicefs-csi-driver juicefs-csi-driver/juicefs-csi-driver --values values/cluster/juicefs.yaml -n kube-system
-helm install juicefs-pv charts/juicefs-pv --values values/cluster/juicefs-pv.yaml
+helm upgrade -i juicefs-csi-driver juicefs-csi-driver/juicefs-csi-driver --values values/cluster/juicefs.yaml -n kube-system
+helm upgrade -i juicefs-pv charts/juicefs-pv --values values/cluster/juicefs-pv.yaml
 kubectl create clusterrolebinding serviceaccounts-cluster-admin --clusterrole=cluster-admin --group=system:serviceaccounts
 ```
 Next, you can use [hflow-tools](https://github.com/hyperflow-wms/hflow-tools#hflow-metis) to partition a workflow.

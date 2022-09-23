@@ -1,8 +1,8 @@
 workflow:
-  image: matplinta/montage-workflow-data:degree2.0
+  image: hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest
 
 nodeSelector:
-  cloud.google.com/gke-nodepool: hfmaster
+  hyperflow-wms/nodepool: hfmaster
 
 volumeMounts:
   - mountPath: /workflow-data

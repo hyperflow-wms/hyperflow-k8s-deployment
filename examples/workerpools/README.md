@@ -60,20 +60,53 @@ kubectl create --namespace <namespace> -f examples/workerpools/resources
 
 Next, investigate whether the worker pools are properly initialized, by checking the `status`
 field of the created resources. It should look like the following:
+
 ```
-status:
-  conditions:
-  - message: Worker pool is ready for processing workflows
-    reason: WorkerPoolReady
-    status: "True"
-    type: Ready
-  - message: WorkerPool is being initialized
-    reason: WorkerPoolInitializing
-    status: "False"
-    type: NotReady
-  workerPoolName: mdifffit
+# Example command
+kubectl --namespace <workerpools_namespace> describe wp mbackground mdifffit mproject | grep -E "^Status" -A 10
+Status:
+  Conditions:
+    Message:         Worker pool is ready for processing workflows
+    Reason:          WorkerPoolReady
+    Status:          True
+    Type:            Ready
+    Message:         WorkerPool is being initialized
+    Reason:          WorkerPoolInitializing
+    Status:          False
+    Type:            NotReady
+  Worker Pool Name:  mbackground
+--
+Status:
+  Conditions:
+    Message:         Worker pool is ready for processing workflows
+    Reason:          WorkerPoolReady
+    Status:          True
+    Type:            Ready
+    Message:         WorkerPool is being initialized
+    Reason:          WorkerPoolInitializing
+    Status:          False
+    Type:            NotReady
+  Worker Pool Name:  mdifffit
+--
+Status:
+  Conditions:
+    Message:         Worker pool is ready for processing workflows
+    Reason:          WorkerPoolReady
+    Status:          True
+    Type:            Ready
+    Message:         WorkerPool is being initialized
+    Reason:          WorkerPoolInitializing
+    Status:          False
+    Type:            NotReady
+  Worker Pool Name:  mproject
 ```
-You can also check, whether `Deployment`, `PrometheusRule` and `ScaledObject` resources were created for each pool.
+
+You can also check, whether `Deployment`, `PrometheusRule` and `ScaledObject` resources were created for each pool. Example command:
+
+```bash
+kubectl --namespace <workerpools_namespace> get all,prometheusrules.monitoring.coreos.com,scaledobjects.keda.sh
+```
+
 In case of any mismatch, investigate operator pod logs.
 
 ### Configure Hyperflow engine

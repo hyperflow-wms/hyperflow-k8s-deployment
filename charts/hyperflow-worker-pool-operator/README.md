@@ -11,18 +11,18 @@ based on various metrics.
 
 Install manifest with helm:
 ```
-helm install --namespace default worker-pool-operator .
+helm upgrade -i --debug  --namespace default worker-pool-operator .
 ```
 Uninstall:
 ```
-helm uninstall --namespace default worker-pool-operator
+helm upgrade -i --debug  --namespace default worker-pool-operator
 ```
 ### Chart parameters:
 
 | Name                                   | Description                                                                                                                                                                                                                     | Value                                  |
 |----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------|
 | `nodeSelector`                         | Node selector for `hyperflow-worker-pool-operator` deployment                                                                                                                                                                   | `{}`                                   |
-| `image`                                | Image for `hyperflow-worker-pool-operator` deployment                                                                                                                                                                           | `kjanecki/hflow-worker-operator:1.0.0` |
+| `image`                                | Image for `hyperflow-worker-pool-operator` deployment                                                                                                                                                                           | `hyperflowwms/worker-pool-operator:v1.0.0` |
 | `config.data`                          | Content of ConfigMap with templates for Worker Pool child resources. Should contain the following templates: `deployment.yml`, `prometheus-rule.yml`, `scaledobject.yml`. If not provided, the default templates will be used.  | lookup in `values.yaml`                |                               
 | `kube-prometheus-stack.enabled`        | Whether kube-prometheus-stack chart should be deployed                                                                                                                                                                          | `false`                                |    
 | `prometheus-adapter.enabled`           | Whether prometheus-adapter chart should be deployed                                                                                                                                                                             | `false`                                |    
@@ -56,7 +56,7 @@ metadata:
   name: mproject
 spec:
   taskType: mProject
-  image: kjanecki/montage2-amqp:latest
+  image: hyperflowwms/montage2-worker:je-1.3.0
   rabbitHostname: rabbitmq.default
   prometheusUrl: http://monitoring-prometheus.default:9090
   redisUrl: redis://redis:6379

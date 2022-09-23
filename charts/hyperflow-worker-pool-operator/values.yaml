@@ -1,5 +1,5 @@
 nodeSelector: {}
-image: kjanecki/hflow-worker-operator:1.0.0
+image: hyperflowwms/worker-pool-operator:v1.0.0
 config:
   data:
     deployment.yml: |-
@@ -22,7 +22,7 @@ config:
           spec:
             terminationGracePeriodSeconds: 300
             nodeSelector:
-              node-role.kubernetes.io/hfworker: hfworker
+              hyperflow-wms/nodepool: hfworker
             containers:
               - name: worker
                 image: {image}
@@ -211,7 +211,7 @@ rabbitmq:
     serviceMonitor:
       enabled: true
       labels:
-        release: worker-pools-operator
+        release: worker-pool-operator
         app.kubernetes.io/component: metrics
 
 kube-prometheus-stack:

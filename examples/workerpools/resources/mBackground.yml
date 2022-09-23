@@ -4,7 +4,7 @@ metadata:
   name: mbackground
 spec:
   taskType: mBackground
-  image: kjanecki/montage2-worker:worker-pools
+  image: hyperflowwms/montage2-worker:je-1.3.0
   rabbitHostname: rabbitmq.default
   prometheusUrl: http://monitoring-prometheus.default:9090
   redisUrl: redis://redis:6379

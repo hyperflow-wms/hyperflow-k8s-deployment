@@ -1,25 +1,25 @@
 nodeSelector:
-  node-role.kubernetes.io/hfmaster: hfmaster
+  hyperflow-wms/nodepool: hfmaster
 
 prometheus-adapter:
   enabled: true
   nodeSelector:
-    node-role.kubernetes.io/hfmaster: hfmaster
+    hyperflow-wms/nodepool: hfmaster
 
 prometheus-rabbitmq-exporter:
   enabled: true
   nodeSelector:
-    node-role.kubernetes.io/hfmaster: hfmaster
+    hyperflow-wms/nodepool: hfmaster
 
 keda:
   enabled: true
   nodeSelector:
-    node-role.kubernetes.io/hfmaster: hfmaster
+    hyperflow-wms/nodepool: hfmaster
 
 rabbitmq:
   enabled: true
   nodeSelector:
-    node-role.kubernetes.io/hfmaster: hfmaster
+    hyperflow-wms/nodepool: hfmaster
   auth:
     username: guest
     password: guest
@@ -35,19 +35,19 @@ kube-prometheus-stack:
     enabled: true
     adminPassword: admin
     nodeSelector:
-      node-role.kubernetes.io/hfmaster: hfmaster
+      hyperflow-wms/nodepool: hfmaster
 
   kube-state-metrics:
     nodeSelector:
-      node-role.kubernetes.io/hfmaster: hfmaster
+      hyperflow-wms/nodepool: hfmaster
 
   prometheusOperator:
     enabled: true
     nodeSelector:
-      node-role.kubernetes.io/hfmaster: hfmaster
+      hyperflow-wms/nodepool: hfmaster
 
   prometheus:
     enabled: true
     prometheusSpec:
       nodeSelector:
-        node-role.kubernetes.io/hfmaster: hfmaster
+        hyperflow-wms/nodepool: hfmaster
