@@ -86,13 +86,13 @@ kubectl create clusterrolebinding serviceaccounts-cluster-admin \
 This is included in `hyperflow-engine` chart and is applied automatically when it is installed.
 
 #### Node labels
-HyperFlow Kubernetes resources use the following [`nodeSelectors`](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector):
-* `nodetype: hfmaster` for all HyperFlow master components (Hyperflow engine deployment, Redis server, NFS server)
-* `nodetype: worker` for workflow job Pods
+HyperFlow Kubernetes resources use the following [`node selectors`](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector):
+* `hyperflow-wms/nodepool: hfmaster` for all HyperFlow master components (Hyperflow engine deployment, Redis server, NFS server)
+* `hyperflow-wms/nodepool: hfworker` for workflow job Pods
 
-Consequently, it is recommended to set up two pools in your cluster:
-* A *master* pool: 1 node with label `nodetype: hfmaster` -- for master components.
-* A *worker* pool: any number of nodes with label `nodetype: worker` -- for workflow jobs. 
+Consequently, it is recommended to set up two pools of nodes in your cluster:
+* A *master* pool: 1 node with label `hyperflow-wms/nodepool: hfmaster` -- for master components.
+* A *worker* pool: any number of nodes with label `hyperflow-wms/nodepool: hfworker` -- for workflow jobs. 
 This way jobs won't interfere with workflow runtime components.
 
 If you don't want to use labels, you can use values from `minikube` directory that don't use selectors.  
