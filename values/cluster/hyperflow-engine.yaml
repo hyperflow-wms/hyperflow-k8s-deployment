@@ -49,7 +49,7 @@ containers:
       - name: NODE_OPTIONS
         value: "--max-old-space-size=4096"
   tools:
-    image: hyperflowwms/hflow-tools:v1.3.0
+    image: hyperflowwms/hflow-tools:v1.3.1
 
 ## Example initContainers settings for downloading and preprocessing workflow data from s3 datasource
 #initContainers:
