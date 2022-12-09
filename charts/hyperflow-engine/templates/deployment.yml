@@ -87,7 +87,7 @@ spec:
           {{ if .Values.containers.hyperflow.runAsServer }}
           command: {{ .Values.containers.hyperflow.serverCommand | toYaml | nindent 10 }}
           {{ else }}
-          command: {{ .Values.containers.worker.command | toYaml | nindent 10}}
+          command: {{ .Values.containers.hyperflow.command | toYaml | nindent 10}}
           {{ end }}
           {{- with .Values.containers.hyperflow.volumeMounts }}
           volumeMounts: {{ . | toYaml | nindent 10}}
