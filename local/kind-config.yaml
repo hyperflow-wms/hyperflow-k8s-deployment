@@ -9,6 +9,8 @@ nodes:
   image: kindest/node:v1.22.2
 - role: worker
   image: kindest/node:v1.22.2
+  labels: 
+    hyperflow-wms/nodepool: hfmaster
   kubeadmConfigPatches:
   - |
     kind: JoinConfiguration
@@ -17,6 +19,8 @@ nodes:
         system-reserved: memory=2Gi
 - role: worker
   image: kindest/node:v1.22.2
+  labels: 
+    hyperflow-wms/nodepool: hfworker
   kubeadmConfigPatches:
   - |
     kind: JoinConfiguration
@@ -25,6 +29,8 @@ nodes:
         system-reserved: memory=2Gi
 - role: worker
   image: kindest/node:v1.22.2
+  labels: 
+    hyperflow-wms/nodepool: hfworker
   kubeadmConfigPatches:
   - |
     kind: JoinConfiguration
@@ -33,6 +39,8 @@ nodes:
         system-reserved: memory=2Gi
 - role: worker
   image: kindest/node:v1.22.2
+  labels: 
+    hyperflow-wms/nodepool: hfworker
   kubeadmConfigPatches:
   - |
     kind: JoinConfiguration
@@ -41,6 +49,8 @@ nodes:
         system-reserved: memory=2Gi
 - role: worker
   image: kindest/node:v1.22.2
+  labels: 
+    hyperflow-wms/nodepool: hfworker
   kubeadmConfigPatches:
   - |
     kind: JoinConfiguration
@@ -49,6 +59,8 @@ nodes:
         system-reserved: memory=2Gi
 - role: worker
   image: kindest/node:v1.22.2
+  labels: 
+    hyperflow-wms/nodepool: hfworker
   kubeadmConfigPatches:
   - |
     kind: JoinConfiguration
@@ -57,6 +69,8 @@ nodes:
         system-reserved: memory=2Gi
 - role: worker
   image: kindest/node:v1.22.2
+  labels: 
+    hyperflow-wms/nodepool: hfworker
   kubeadmConfigPatches:
   - |
     kind: JoinConfiguration
@@ -65,6 +79,8 @@ nodes:
         system-reserved: memory=2Gi
 - role: worker
   image: kindest/node:v1.22.2
+  labels: 
+    hyperflow-wms/nodepool: hfworker
   kubeadmConfigPatches:
   - |
     kind: JoinConfiguration
@@ -73,6 +89,8 @@ nodes:
         system-reserved: memory=2Gi
 - role: worker
   image: kindest/node:v1.22.2
+  labels: 
+    hyperflow-wms/nodepool: hfworker
   kubeadmConfigPatches:
   - |
     kind: JoinConfiguration
