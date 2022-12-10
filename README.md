@@ -78,9 +78,8 @@ Note that all job variables have default values which will be used if not overri
   
 ## Running the workflow
 
-### Setting up the cluster the Helm way
+### Setting up the cluster using Helm 
 
-Firstly, make sure your k8s context and namespaces point to right cluster.
 
 There are several details you should know before installing Hyperflow on your cluster:
 
@@ -150,33 +149,6 @@ gcloud container clusters resize my-k8s-cluster --node-pool default-pool --num-n
 This command can also be used to resize the cluster to the desired number of nodes.
 
 
-## Configuring bare-metal Kubernetes installation
-To properly configure a bare-metal Kubernetes installation (e.g. [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube)) for a HyperFlow+nfs deployment, you need to do the following steps (commands for Ubuntu 18.04).
-
-### Install packages
-```
-apt install nfs-kernel-server
-apt install dnsmasq
-```
-
-### Configure NFS service resolution
-The `nfs` service is not properly resolved in the cluster because the resolution goes through the host DNS. You can fix this quickly by changing `nfs-server.default` to the IP address (`kubectl get services`) in the `pv-pvc.yml` file. Alternatively, you can configure the name resolution using `dnsmasq` as follows: 
-
-- Add the following to `/etc/dnsmasq.conf`: 
-```
-server=/cluster.local/10.96.0.10
-server=8.8.8.8
-listen-address=127.0.0.1
-```
-- Run this to add an entry to `/etc/hosts`:
-```
-echo "127.0.1.1 $HOSTNAME" >> /etc/hosts 
-```
-- Add these lines to `/etc/resolv.conf`:
-```
-search svc.cluster.local
-options ndots:5 timeout:1
-```
 ## Processing logs
 After the workflow has finished, you can process its logs by starting the following Kubernetes job:
 ```
@@ -221,3 +193,32 @@ helm upgrade -i juicefs-pv charts/juicefs-pv --values values/cluster/juicefs-pv.
 kubectl create clusterrolebinding serviceaccounts-cluster-admin --clusterrole=cluster-admin --group=system:serviceaccounts
 ```
 Next, you can use [hflow-tools](https://github.com/hyperflow-wms/hflow-tools#hflow-metis) to partition a workflow.
+
+
+## (Deprecated) Configuring bare-metal Kubernetes installation 
+To properly configure a bare-metal Kubernetes installation (e.g. [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube)) for a HyperFlow+nfs deployment, you need to do the following steps (commands for Ubuntu 18.04).
+
+### Install packages
+```
+apt install nfs-kernel-server
+apt install dnsmasq
+```
+
+### Configure NFS service resolution
+The `nfs` service is not properly resolved in the cluster because the resolution goes through the host DNS. You can fix this quickly by changing `nfs-server.default` to the IP address (`kubectl get services`) in the `pv-pvc.yml` file. Alternatively, you can configure the name resolution using `dnsmasq` as follows: 
+
+- Add the following to `/etc/dnsmasq.conf`: 
+```
+server=/cluster.local/10.96.0.10
+server=8.8.8.8
+listen-address=127.0.0.1
+```
+- Run this to add an entry to `/etc/hosts`:
+```
+echo "127.0.1.1 $HOSTNAME" >> /etc/hosts 
+```
+- Add these lines to `/etc/resolv.conf`:
+```
+search svc.cluster.local
+options ndots:5 timeout:1
+```
