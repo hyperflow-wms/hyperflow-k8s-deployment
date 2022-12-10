@@ -1,4 +1,13 @@
 # HyperFlow deployment on Kubernetes
+## Getting started - run a sample workflow
+To quickly run a small [Montage workflow](https://github.com/hyperflow-wms/montage2-workflow) on your local machine using Hyperflow, do the following steps:
+- Install [kind](https://kind.sigs.k8s.io/) and [Helm](https://helm.sh/)
+- Create a small kind cluster using provided configuration: 
+```
+kind create cluster --config local/kind-config-3n.yaml
+```
+- Jump to section [Install resources](#install-resources)
+
 ## Architecture
 
 <img src="https://github.com/hyperflow-wms/hyperflow-k8s-deployment/blob/master/hyperflow-k8s-arch.png" width="600">
@@ -98,7 +107,7 @@ This way jobs won't interfere with workflow runtime components.
 If you don't want to use labels, you can use values from `minikube` directory that don't use selectors.  
 
 
-### Installing resources
+### Install resources
 Assuming you are in repository main directory, install Kubernetes resources as follows:
 ```
 helm upgrade -i nfs-server-provisioner charts/nfs-ganesha-server-and-external-provisioner/charts/nfs-server-provisioner --values values/cluster/nfs-server-provisioner.yml
