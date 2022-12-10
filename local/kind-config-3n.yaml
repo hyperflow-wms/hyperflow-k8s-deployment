@@ -1,0 +1,14 @@
+# three node (two workers) cluster config
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+- role: worker
+  labels: 
+    hyperflow-wms/nodepool: hfmaster
+- role: worker
+  labels: 
+    hyperflow-wms/nodepool: hfworker
+- role: worker
+  labels: 
+    hyperflow-wms/nodepool: hfworker
