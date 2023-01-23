@@ -114,12 +114,10 @@ helm upgrade -i nfs-pv charts/nfs-volume --values values/cluster/nfs-volume.yaml
 helm upgrade -i redis charts/redis --values values/cluster/redis.yml
 helm upgrade -i hyperflow-nfs-data charts/hyperflow-nfs-data --values values/cluster/hyperflow-nfs-data.yaml
 helm upgrade -i hyperflow-engine charts/hyperflow-engine --values values/cluster/hyperflow-engine.yaml
-
 helm repo add jaegertracing https://jaegertracing.github.io/helm-charts
-helm install jaeger jaegertracing/jaeger  --version 0.66.1  --values jaeger-values.yaml
-
+helm install jaeger jaegertracing/jaeger  --version 0.66.1  --values values/cluster/jaeger-values.yaml
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
-helm upgrade -i my-opentelemetry-collector open-telemetry/opentelemetry-collector -f collector-values.yml --version 0.45.2
+helm upgrade -i my-opentelemetry-collector open-telemetry/opentelemetry-collector -f values/cluster/collector-values.yml --version 0.45.2
 ```
 
 The `hyperflow-nfs-data` Helm Chart populates the NFS volume with initial data of small Montage2 workflow.
