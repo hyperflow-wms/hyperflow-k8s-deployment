@@ -97,6 +97,12 @@ configMap:
                       value: "0"
                     - name: HF_VAR_NUM_RETRIES
                       value: "1"
+                    - name: HF_VAR_ENABLE_TRACING
+                      value: "${enableTracing}"
+                    - name: HF_VAR_OT_PARENT_ID
+                      value: "${optParentId}"
+                    - name: HF_VAR_OT_TRACE_ID
+                      value: "${optTraceId}"
                     - name: HF_LOG_NODE_NAME
                       valueFrom:
                         fieldRef:
