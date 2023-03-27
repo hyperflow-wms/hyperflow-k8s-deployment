@@ -1,0 +1,270 @@
+# Hyperflow engine image
+hf-engine-image: &hf-engine-image hyperflowwms/hyperflow:v1.7.0-1
+
+# Change these to run a different workflow
+wf-data-image: &wf-data-image hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest
+wf-worker-image: &wf-worker-image hyperflowwms/montage2-worker:je-1.3.2
+
+worker-pools:
+  enabled: false # Set to true if using worker pools execution model
+  enable-prometheus-adapter: &enable-prometheus-adapter true
+  enable-prometheus-rabbitmq-exporter: &enable-prometheus-rabbitmq-exporter true
+  enable-keda: &enable-keda true
+  enable-rabbitmq: &enable-rabbit-mq true
+  enable-kube-prometheus-stack: &enable-kube-prometheus-stack true
+  enable-alert-manager: &enable-alert-manager false
+  enable-grafana: &enable-grafana true
+  enable-prometheus-operator: &enable-prometheus-operator true
+  enable-prometheus: &enable-prometheus true
+
+###########################
+####   Workflow data   #### 
+###########################
+hyperflow-nfs-data:
+  workflow:
+    image: *wf-data-image
+  nodeSelector:
+    hyperflow-wms/nodepool: hfmaster
+  volumeMounts:
+    - mountPath: /workflow-data
+      name: workflow-data
+
+#####################################
+####   NFS Server provisioner    ####
+#####################################
+nfs-server-provisioner:
+  nodeSelector:
+    hyperflow-wms/nodepool: hfmaster
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 50Gi
+
+#####################
+####    Redis    ####
+#####################
+redis:
+  nodeSelector:
+    hyperflow-wms/nodepool: hfmaster
+
+
+############################
+####  Hyperflow Engine  ####
+############################
+hyperflow-engine:
+#  resources:
+#    requests:
+#      cpu: 1.5
+#      memory: "2000Mi"
+#    limits:
+#      cpu: 2.5
+#      memory: "5000Mi"
+
+  containers:
+    hyperflow:
+      image: *hf-engine-image
+      runAsServer: false
+      serverCommand:
+        - "/bin/sh"
+        - "-c"
+        - >
+          hflow start-server --host 0.0.0.0 --port 8080 ;
+      command:
+        - "/bin/sh"
+        - "-c"
+        - >
+          if [ $HF_VAR_DEBUG -eq 0 ] ; then
+            echo "Running workflow:" ;
+            cd /work_dir ;
+            hflow run workflow.json ;
+            if [ "$(ls -A /work_dir/logs-hf)" ]; then
+              echo 1 > /work_dir/postprocStart ;
+            else
+              echo "Hyperflow logs not collected. Something must have gone wrong!"
+            fi ;
+            echo "Workflow finished. Container is waiting for manual termination." ;
+            while true; do sleep 5 ; done ;
+          else
+            while true; do sleep 5 ; done ;
+          fi ;
+    worker:
+      image: *wf-worker-image
+      additionalVariables:
+        - name: HF_VAR_DEBUG
+          value: "1"
+        - name: HF_VAR_CPU_REQUEST
+          value: "0.7"
+        - name: HF_VAR_MEM_REQUEST
+          value: "500Mi"
+        - name: PORT
+          value: "8080"
+        - name: HF_VAR_autoscalerAddress
+          value: 'http://hyperflow-standalone-autoscaler:8080'
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=4096"
+    tools:
+      image: hyperflowwms/hflow-tools:v1.3.1
+
+  ## Example initContainers settings for downloading and preprocessing workflow data from s3 datasource
+  #initContainers:
+  #  enabled: true
+  #  dataInjector:
+  #    enabled: true
+  #    source:
+  #      autoGenerateSecret: true
+  #      s3:
+  #        accessKey: "access-key"
+  #        secretKey: "secret-key"
+  #        hostname: "hostname"
+  #        bucket: "hyperflow-data"
+  #        filename: "montage2-2mass-3.0-latest.gz"
+  #  dataPreprocess:
+  #    enabled: true
+
+  nodeSelector:
+    hyperflow-wms/nodepool: hfmaster
+
+  configMap:
+    data:
+      job-template.yaml: |-
+            apiVersion: batch/v1
+            kind: Job
+            metadata:
+              name: job${jobName}
+            spec:
+              ttlSecondsAfterFinished: 100
+              template:
+                metadata:
+                  labels:
+                    app: hyperflow
+                spec:
+                  restartPolicy: Never
+                  containers:
+                  - name: test
+                    image: ${containerName}
+                    env:
+                    #- name: HF_VAR_ENABLE_NETHOGS
+                        #value: "0"
+                      - name: HF_VAR_WORK_DIR
+                        value: "${workingDirPath}"
+                      - name: HF_VAR_WAIT_FOR_INPUT_FILES
+                        value: "0"
+                      - name: HF_VAR_NUM_RETRIES
+                        value: "1"
+                      - name: HF_VAR_ENABLE_TRACING
+                        value: "${enableTracing}"
+                      - name: HF_VAR_OT_PARENT_ID
+                        value: "${optParentId}"
+                      - name: HF_VAR_OT_TRACE_ID
+                        value: "${optTraceId}"
+                      - name: HF_LOG_NODE_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: spec.nodeName
+                      - name: HF_LOG_POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: HF_LOG_POD_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.namespace
+                      - name: HF_LOG_POD_IP
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: status.podIP
+                      - name: HF_LOG_POD_SERVICE_ACCOUNT
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: spec.serviceAccountName
+                      - name: HF_VAR_FS_MONIT_ENABLED
+                        value: "0"
+                      - name: HF_VAR_FS_MONIT_COMMAND
+                        value: '${command}'
+                      - name: HF_VAR_FS_MONIT_PATH_PATTERN
+                        value: "${workingDirPath}/*"
+                    command:
+                      - "/bin/sh"
+                      - "-c"
+                      - >
+                        if [ $HF_VAR_FS_MONIT_ENABLED -eq 1 ]; 
+                        then export LD_PRELOAD=/fbam/libfbam.so ;
+                            export HF_VAR_FS_MONIT_LOGFILE="${workingDirPath}/logs-hf/file_access_log_$(echo "${command}" | tr ./: "_" | cut -d' ' -f2).jsonl" ;
+                            touch $HF_VAR_FS_MONIT_LOGFILE ;  
+                        fi ;
+                        ${command}; exitCode=$? ;
+                        if [ $exitCode -ne 0 ]; then echo "Command ${command} returned exit code. $exitCode. Job fails." ; exit 1 ; fi ;
+                    workingDir: ${workingDirPath}
+                    resources:
+                      requests:
+                        cpu: ${cpuRequest}
+                        memory: ${memRequest}
+                    volumeMounts:
+                    - name: my-pvc-nfs
+                      mountPath: ${volumePath}
+                  nodeSelector:
+                    hyperflow-wms/nodepool: hfworker
+                  volumes:
+                  - name: workflow-data
+                    emptyDir: {}
+                  - name: my-pvc-nfs
+                    persistentVolumeClaim:
+                      claimName: nfs
+
+########################################
+####  Hyperflow worker pool operator ###
+########################################
+hyperflow-worker-pool-operator:
+  nodeSelector:
+    hyperflow-wms/nodepool: hfmaster
+
+  prometheus-adapter:
+    enabled: *enable-prometheus-adapter
+    nodeSelector:
+      hyperflow-wms/nodepool: hfmaster
+
+  prometheus-rabbitmq-exporter:
+    enabled: *enable-prometheus-rabbitmq-exporter 
+    nodeSelector:
+      hyperflow-wms/nodepool: hfmaster
+
+  keda:
+    enabled: *enable-keda
+    nodeSelector:
+      hyperflow-wms/nodepool: hfmaster
+
+  rabbitmq:
+    enabled: *enable-rabbit-mq 
+    nodeSelector:
+      hyperflow-wms/nodepool: hfmaster
+    auth:
+      username: guest
+      password: guest
+      erlangCookie: jiwng4pw7NJL3KutMb4pF7k6C5RphXYU
+
+  kube-prometheus-stack:
+    enabled: *enable-kube-prometheus-stack 
+
+    alertmanager:
+      enabled: *enable-alert-manager
+
+    grafana:
+      enabled: *enable-grafana
+      adminPassword: admin
+      nodeSelector:
+        hyperflow-wms/nodepool: hfmaster
+
+    kube-state-metrics:
+      nodeSelector:
+        hyperflow-wms/nodepool: hfmaster
+
+    prometheusOperator:
+      enabled: *enable-prometheus-operator
+      nodeSelector:
+        hyperflow-wms/nodepool: hfmaster
+
+    prometheus:
+      enabled: *enable-prometheus
+      prometheusSpec:
+        nodeSelector:
+          hyperflow-wms/nodepool: hfmaster
