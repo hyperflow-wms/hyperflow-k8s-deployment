@@ -1,0 +1,12 @@
+dependencies:
+- name: redis
+  repository: ""
+  version: 0.*
+- name: hyperflow-engine
+  repository: ""
+  version: 0.*
+- name: hwp
+  repository: ""
+  version: 0.*
+digest: sha256:6f876520a7d75c00b6f89d9485f58f6db5e10d551b694d96bfe1da15aa48917d
+generated: "2023-03-26T22:19:07.549730585Z"

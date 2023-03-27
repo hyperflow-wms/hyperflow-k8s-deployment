@@ -1,0 +1,15 @@
+apiVersion: v2
+name: hyperflow
+description: Umbrella chart for Hyperflow WMS and workflow deployment
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+dependencies:
+  - name: redis
+    version: 0.*
+  - name: hyperflow-engine
+    version: 0.*
+  - name: hyperflow-worker-pool-operator
+    version: 0.*
+#    condition: worker-pools.enabled

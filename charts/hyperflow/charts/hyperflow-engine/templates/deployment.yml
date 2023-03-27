@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hyperflow-engine
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: hyperflow
+      name: hyperflow-engine
+      component: hyperflow-engine
+  template:
+    metadata:
+      labels:
+        app: hyperflow
+        name: hyperflow-engine
+        component: hyperflow-engine
+    spec:
+      {{- if .Values.initContainers.enabled }}
+      initContainers:
+        {{- if and .Values.initContainers.enabled .Values.initContainers.dataInjector.enabled }}
+        - name: data-injector
+          image: {{ .Values.initContainers.dataInjector.image }}
+          {{- with .Values.initContainers.dataInjector.command }}
+          command: {{ . | toYaml | nindent 12 }}
+          {{- end }}
+          {{- with .Values.initContainers.dataInjector.volumeMounts }}
+          volumeMounts: {{ . | toYaml | nindent 10}}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                name: hyperflow-workflow-datasource
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+        {{- end }}
+        {{- if and .Values.initContainers.enabled .Values.initContainers.dataPreprocess.enabled }}
+        - name: data-preprocess
+          image: {{ .Values.initContainers.dataPreprocess.image }}
+          {{- with .Values.initContainers.dataPreprocess.command }}
+          command: {{ . | toYaml | nindent 12 }}
+          {{- end }}
+          {{- with .Values.initContainers.dataPreprocess.volumeMounts }}
+          volumeMounts: {{ . | toYaml | nindent 10}}
+          {{- end }}
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: hyperflow
+          image: {{ .Values.containers.hyperflow.image }}
+          imagePullPolicy: Always
+          {{- with .Values.resources }}
+          resources: {{ . | toYaml | nindent 12 }}
+          {{- end }}
+          env:
+          - name: REDIS_URL
+            value: redis://redis.{{ .Release.Namespace }}:6379
+          - name: HF_VAR_function
+            # The source of this function can be found here
+            # https://github.com/hyperflow-wms/hyperflow/blob/master/functions/kubernetes/k8sCommand.js
+            value: "k8sCommand"
+          - name: HF_VAR_JOB_TEMPLATE_PATH
+            value: "/opt/hyperflow/job-template.yaml"
+          - name: HF_VAR_WORKER_CONTAINER
+            #value: "hyperflowwms/soykb-workflow-worker:v1.0.10-1-g95b7caf"
+            #value: "cano601/soykb-workflow:latest" # SoyKB with file block access monitoring
+            #value: "matplinta/montage-workflow-worker:exec1.0.13"
+            value: {{ .Values.containers.worker.image }}
+          - name: HF_VAR_WORK_DIR
+            value: "/work_dir"
+          - name: HF_VAR_BACKOFF_LIMIT
+            value: "0"
+          - name: HF_VAR_STOP_WORKFLOW_WHEN_JOB_FAILED
+            value: "1"
+          - name: HF_VAR_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          {{- with .Values.containers.worker.additionalVariables }}
+          {{ . | toYaml | nindent 10 }}
+          {{- end }}
+          {{ if .Values.containers.hyperflow.runAsServer }}
+          command: {{ .Values.containers.hyperflow.serverCommand | toYaml | nindent 10 }}
+          {{ else }}
+          command: {{ .Values.containers.hyperflow.command | toYaml | nindent 10}}
+          {{ end }}
+          {{- with .Values.containers.hyperflow.volumeMounts }}
+          volumeMounts: {{ . | toYaml | nindent 10}}
+          {{- end }}
+        - name: hflow-tools
+          image: {{ .Values.containers.tools.image }}
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          command:
+            - "sh" 
+            - "-c"
+            - >
+              while ! [ -f /work_dir/parsingFinished ]; do echo "Waiting for parsingFinished flag to be mounted..." ; sleep 5 ; done ;
+              echo "parsingFinished flag mounted: " ; 
+              ls -la /work_dir/parsingFinished ;
+              cd /work_dir/parsed/*/ ;
+              sudo chmod -R 777 . ;
+              hflow-viz-trace -s . ;
+              while true; do sleep 5 ; done ;
+          {{- with .Values.containers.tools.volumeMounts }}
+          volumeMounts: {{ . | toYaml | nindent 10 }}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{ . | toYaml | nindent 10 }}
+      {{- end }}
+      {{- with .Values.volumes }}
+      volumes: {{ . | toYaml | nindent 10 }}
+      {{- end }}
+      volumes:
+      - name: config-map
+        configMap:
+          name: hyperflow-config
+      - name: workflow-data
+        persistentVolumeClaim:
+          claimName: nfs

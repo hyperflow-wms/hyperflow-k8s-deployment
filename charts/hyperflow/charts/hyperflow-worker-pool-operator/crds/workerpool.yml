@@ -1,0 +1,99 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: workerpools.hyperflow.agh.edu.pl
+spec:
+  group: hyperflow.agh.edu.pl
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                taskType:
+                  type: string
+                image:
+                  type: string
+                rabbitHostname:
+                  type: string
+                redisUrl:
+                  type: string
+                prometheusUrl:
+                  type: string
+                queueName:
+                  type: string
+                minReplicaCount:
+                  type: integer
+                  default: 0
+                maxReplicaCount:
+                  type: integer
+                  default: 50
+                initialResources:
+                  type: object
+                  properties:
+                    requests:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                        memory:
+                          type: string
+                      required:
+                        - cpu
+                        - memory
+                    limits:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                        memory:
+                          type: string
+                  required:
+                    - requests
+              required:
+                - taskType
+                - image
+                - rabbitHostname
+                - redisUrl
+                - prometheusUrl
+                - initialResources
+            status:
+              type: object
+              properties:
+                workerPoolName:
+                  type: string
+                conditions:
+                  type: array
+                  items:
+                    description: Condition to store the condition state
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      reason:
+                        description: The reason for the condition's last transition.
+                        type: string
+                      status:
+                        description: Status of the condition, one of True, False, Unknown.
+                        type: string
+                      type:
+                        description: Type of condition
+                        type: string
+                      timestamp:
+                        description: Timestamp of condition
+                        type: string
+                    required:
+                      - status
+                      - type
+  scope: Namespaced
+  names:
+    plural: workerpools
+    singular: workerpool
+    kind: WorkerPool
+    shortNames:
+      - wp

@@ -1,0 +1,7 @@
+hyperflow-engine:
+  containers:
+    hyperflow:
+      image: hyperflowwms/hyperflow:v1.7.0-1
+
+worker-pools:
+  enabled: true
