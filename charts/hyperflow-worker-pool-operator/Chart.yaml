@@ -1,5 +1,5 @@
 apiVersion: v2
-name: hflow-worker-operator
+name: hyperflow-worker-pool-operator
 description: A Helm chart for Hyperflow Worker Pools operator
 type: application
 version: 0.1.0
