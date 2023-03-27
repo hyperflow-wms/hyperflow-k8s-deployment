@@ -1,5 +1,5 @@
 apiVersion: v2
-name: nfs-storage
+name: nfs-volume
 description: A Helm chart for nfs volume
 type: application
 version: 0.1.0
