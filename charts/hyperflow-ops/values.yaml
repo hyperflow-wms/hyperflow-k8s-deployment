@@ -1,0 +1,82 @@
+worker-pools:
+  enabled: false # Set to true if using worker pools execution model
+  enable-prometheus-adapter: &enable-prometheus-adapter true
+  enable-prometheus-rabbitmq-exporter: &enable-prometheus-rabbitmq-exporter true
+  enable-keda: &enable-keda true
+  enable-rabbitmq: &enable-rabbit-mq true
+  enable-kube-prometheus-stack: &enable-kube-prometheus-stack true
+  enable-alert-manager: &enable-alert-manager false
+  enable-grafana: &enable-grafana true
+  enable-prometheus-operator: &enable-prometheus-operator true
+  enable-prometheus: &enable-prometheus true
+
+
+#####################################
+####   NFS Server provisioner    ####
+#####################################
+nfs-server-provisioner:
+  nodeSelector:
+    hyperflow-wms/nodepool: hfmaster
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 50Gi
+
+
+#########################################
+####  Hyperflow worker pool operator  ###
+#########################################
+hyperflow-worker-pool-operator:
+  nodeSelector:
+    hyperflow-wms/nodepool: hfmaster
+
+  prometheus-adapter:
+    enabled: *enable-prometheus-adapter
+    nodeSelector:
+      hyperflow-wms/nodepool: hfmaster
+
+  prometheus-rabbitmq-exporter:
+    enabled: *enable-prometheus-rabbitmq-exporter 
+    nodeSelector:
+      hyperflow-wms/nodepool: hfmaster
+
+  keda:
+    enabled: *enable-keda
+    nodeSelector:
+      hyperflow-wms/nodepool: hfmaster
+
+  rabbitmq:
+    enabled: *enable-rabbit-mq 
+    nodeSelector:
+      hyperflow-wms/nodepool: hfmaster
+    auth:
+      username: guest
+      password: guest
+      erlangCookie: jiwng4pw7NJL3KutMb4pF7k6C5RphXYU
+
+  kube-prometheus-stack:
+    enabled: *enable-kube-prometheus-stack 
+
+    alertmanager:
+      enabled: *enable-alert-manager
+
+    grafana:
+      enabled: *enable-grafana
+      adminPassword: admin
+      nodeSelector:
+        hyperflow-wms/nodepool: hfmaster
+
+    kube-state-metrics:
+      nodeSelector:
+        hyperflow-wms/nodepool: hfmaster
+
+    prometheusOperator:
+      enabled: *enable-prometheus-operator
+      nodeSelector:
+        hyperflow-wms/nodepool: hfmaster
+
+    prometheus:
+      enabled: *enable-prometheus
+      prometheusSpec:
+        nodeSelector:
+          hyperflow-wms/nodepool: hfmaster
