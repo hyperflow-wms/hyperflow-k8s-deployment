@@ -107,13 +107,64 @@ If you don't want to use labels, you can use values from `minikube` directory th
 
 
 ### Install resources
-Assuming you are in repository main directory, install Kubernetes resources as follows:
+Hyperflow provides two key Helm charts:
+- `hyperflow-ops` - to install key infrastructure services in a cluster. This should be done *once*. 
+- `hyperflow-run` - to run a workflow
+
+To run a sample workflow on a clean Kubernetes cluster, you should do the following:
+- Build Helm dependencies
+```
+cd hyperflow-ops 
+helm dependency build
+cd ../hyperflow-run
+helm dependency build
+cd ..
+```
+- Install the `hyperflow-ops` chart
+```
+helm upgrade -i hf-ops hyperflow-ops
+```
+- Install the `hyperflow-run` chart
+```
+helm upgrade -i hf-run-montage hyperflow-run
+```
+- Once all pods are up and running or completed, you can manually run the workflow as follows:
+```
+kubectl exec -it <hyperflow-engine-pod> sh
+cd /work_dir
+hflow run .
+```
+
+To run a different workflow, change two container images in two lines on top of the `hyperflow-run/charts/values.yaml` file:
+* Worker image: `wf-worker-image: &wf-worker-image hyperflowwms/montage2-worker:je-1.3.2`
+* Data image: `wf-input-data-image: &wf-data-image hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest`
+
+### Cleanup
+Always first delete `hyperlow-run` release(s), before deleting `hyperflow-ops` (otherwise you may get Pods stuck in `Terminating` state). For example:
+```
+helm delete hf-run-montage
+```
+Then, after all resources (including PV and PVC) have been terminated:
+```
+helm delete hf-ops
+```
+You can see installed Helm releases using
+```
+helm list
+```
+
+
+### Helm charts
+All provided Helm charts are as follows:
 ```
 helm upgrade -i nfs-server-provisioner charts/nfs-ganesha-server-and-external-provisioner/charts/nfs-server-provisioner --values values/cluster/nfs-server-provisioner.yml
 helm upgrade -i nfs-pv charts/nfs-volume --values values/cluster/nfs-volume.yaml
 helm upgrade -i redis charts/redis --values values/cluster/redis.yml
 helm upgrade -i hyperflow-nfs-data charts/hyperflow-nfs-data --values values/cluster/hyperflow-nfs-data.yaml
 helm upgrade -i hyperflow-engine charts/hyperflow-engine --values values/cluster/hyperflow-engine.yaml
+```
+To enable tracing with OpenTelemetry, install the following:
+```
 helm repo add jaegertracing https://jaegertracing.github.io/helm-charts
 helm install jaeger jaegertracing/jaeger  --version 0.66.1  --values values/cluster/jaeger-values.yaml
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
@@ -124,10 +175,6 @@ The `hyperflow-nfs-data` Helm Chart populates the NFS volume with initial data o
 To change this, configure the chart by setting `workflow.image` property in file `values/cluster/hyperflow-nfs-data.yaml`.
 You can use images described in [Ready-to-use images section](#ready-to-use-images).
 
-Once all pods are up and running or completed, you can manually run the workflow as follows:
-* `kubectl exec -it <hyperflow-engine-pod> sh`
-* `cd /work_dir`
-* `hflow run .`
 
 ## Using Google Kubernetes Engine
 
