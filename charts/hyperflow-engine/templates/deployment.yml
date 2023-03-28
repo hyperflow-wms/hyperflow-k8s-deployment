@@ -62,9 +62,9 @@ spec:
             value: redis://redis.{{ .Release.Namespace }}:6379
             # URL for OpenTelemetry collector which will collect signals from engine
           - name: HF_VAR_ENABLE_TRACING
-            value: {{ .OpenTelemetry.Enable }}
+            value: "false"
           - name: HF_VAR_OPT_URL
-            value: http://{{ .OpenTelemetry.Collector }}
+            value: nil
           - name: HF_VAR_function
             # The source of this function can be found here
             # https://github.com/hyperflow-wms/hyperflow/blob/master/functions/kubernetes/k8sCommand.js
