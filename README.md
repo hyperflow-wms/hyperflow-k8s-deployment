@@ -78,8 +78,7 @@ Note that all job variables have default values which will be used if not overri
   
 ## Running the workflow
 
-### Setting up the cluster using Helm 
-
+### Prerequisites
 
 There are several details you should know before installing Hyperflow on your cluster:
 
@@ -103,7 +102,7 @@ Consequently, it is recommended to set up two pools of nodes in your cluster:
 * A *worker* pool: any number of nodes with label `hyperflow-wms/nodepool: hfworker` -- for workflow jobs. 
 This way jobs won't interfere with workflow runtime components.
 
-If you don't want to use labels, you can use values from `minikube` directory that don't use selectors.  
+<!--If you don't want to use labels, you can use values from `minikube` directory that don't use selectors.-->
 
 
 ### Install resources
@@ -112,21 +111,13 @@ Hyperflow provides two key Helm charts:
 - `hyperflow-run` - to run a workflow
 
 To run a sample workflow on a clean Kubernetes cluster, you should do the following:
-- Build Helm dependencies
+- Install the `hyperflow-ops` chart 
 ```
-cd hyperflow-ops 
-helm dependency build
-cd ../hyperflow-run
-helm dependency build
-cd ..
+helm upgrade --dependency-update -i hf-ops hyperflow-ops
 ```
-- Install the `hyperflow-ops` chart
+- Install the `hyperflow-run` chart (prefarably in a separate namespace)
 ```
-helm upgrade -i hf-ops hyperflow-ops
-```
-- Install the `hyperflow-run` chart
-```
-helm upgrade -i hf-run-montage hyperflow-run
+helm upgrade --dependency-update -i hf-run-montage hyperflow-run
 ```
 - Once all pods are up and running or completed, you can manually run the workflow as follows:
 ```
@@ -154,7 +145,7 @@ helm list
 ```
 
 
-### Helm charts
+### Helm charts (obsolete)
 All provided Helm charts are as follows:
 ```
 helm upgrade -i nfs-server-provisioner charts/nfs-ganesha-server-and-external-provisioner/charts/nfs-server-provisioner --values values/cluster/nfs-server-provisioner.yml
