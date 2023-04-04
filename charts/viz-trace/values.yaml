@@ -11,7 +11,7 @@ resources:
     cpu: 0	
 
 volumeMounts:
-- mountPath: /work_dir:shared
+- mountPath: /work_dir
   name: workflow-data
     
 volumes:

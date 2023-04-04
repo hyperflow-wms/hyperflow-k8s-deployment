@@ -1,5 +1,2 @@
-spec:
-  template:
-    spec:
-      nodeSelector:
-        nodetype: worker
+nodeSelector:
+  hyperflow-wms/nodepool: hfmaster

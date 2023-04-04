@@ -11,11 +11,8 @@ resources:
 
 restartPolicy: Never
 
-nodeSelector:
-  nodetype: worker
-
 volumeMounts:
-  - mountPath: /work_dir:shared
+  - mountPath: /work_dir
     name: workflow-data	
 
 volumes:

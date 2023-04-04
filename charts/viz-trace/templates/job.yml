@@ -40,3 +40,6 @@ spec:
               value: '0'
           volumeMounts: {{- .Values.volumeMounts | toYaml | nindent 12 }}
       volumes: {{- .Values.volumes | toYaml | nindent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{ . | toYaml | nindent 8}}
+      {{- end }}
