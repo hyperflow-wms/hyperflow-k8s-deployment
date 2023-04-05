@@ -23,6 +23,29 @@ hyperflow-nfs-data:
       name: workflow-data
 
 
+#########################################
+####  Configuration of worker pools  ####
+#########################################
+worker-pools:
+  configurations:
+    - taskType: mProject
+      image: *wf-worker-image
+      requests:
+        cpu: 0.7
+        memory: 524288000
+      minReplicaCount: 0
+      maxReplicaCount: 50
+    - taskType: mDiffFit
+    - taskType: mBackground
+  defaults:
+    image: *wf-worker-image
+    requests:
+      cpu: 0.7
+      memory: 524288000
+    minReplicaCount: 0
+    maxReplicaCount: 50
+
+
 #####################
 ####    Redis    ####
 #####################
