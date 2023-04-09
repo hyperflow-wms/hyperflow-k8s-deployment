@@ -8,7 +8,8 @@ restartPolicy: Never
 
 resources:
   requests:
-    cpu: 0	
+    cpu: 0
+    memory: 0
 
 volumeMounts:
 - mountPath: /work_dir

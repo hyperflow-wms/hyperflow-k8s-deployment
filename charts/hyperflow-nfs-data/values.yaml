@@ -23,4 +23,9 @@ volumes:
     persistentVolumeClaim:
       claimName: nfs
 
+resources:
+  requests:
+    cpu: 1
+    memory: 0
+
 nodeSelector: {}
