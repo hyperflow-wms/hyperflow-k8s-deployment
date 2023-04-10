@@ -15,11 +15,13 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           resources: {{ .Values.resources | toYaml | nindent 12 }}
           command:
-            - "/bin/sh" 
+            - "/bin/sh"
             - "-c"
             - >
+            {{- if .Values.waitForPostProcStart }}
               while ! [ -f /work_dir/postprocStart ]; do echo "Waiting for postprocStart flag to be mounted..." ; sleep 5 ; done ;
-              echo "postprocStart flag mounted: " ; 
+              echo "postprocStart flag mounted: " ;
+            {{- end }}
               ls -la /work_dir ;
               mkdir -p /work_dir/parsed ;
               python3 /parser.py -s /work_dir/logs-hf -d /work_dir/parsed -w /work_dir/workflow.json ;

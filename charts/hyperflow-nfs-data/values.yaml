@@ -13,6 +13,8 @@ workflow:
     sed -i 's/exit/noop/g' /workflow-data/workflow.json ;
     echo "Volume mounted" ;
 
+# Wait for creation of /work_dir/postprocStart before parsing
+waitForPostProcStart: true
 
 volumeMounts:
   - mountPath: /workflow-data
