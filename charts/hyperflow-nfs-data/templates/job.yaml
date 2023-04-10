@@ -14,6 +14,7 @@ spec:
         - name: workflow-data
           image: {{ .Values.workflow.image }}
           imagePullPolicy: {{ .Values.workflow.imagePullPolicy}}
+          resources: {{ .Values.resources | toYaml | nindent 12 }}
           command: {{- .Values.workflow.command | toYaml | nindent 10 }}
           volumeMounts: {{- .Values.volumeMounts | toYaml | nindent 10 }}
           resources:
