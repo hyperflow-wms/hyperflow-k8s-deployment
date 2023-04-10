@@ -71,6 +71,8 @@ spec:
             value: "k8sCommand"
           - name: HF_VAR_JOB_TEMPLATE_PATH
             value: "/opt/hyperflow/job-template.yaml"
+          - name: "HF_VAR_WAIT_FOR_INPUT_FILES"
+            value: "0"
           - name: HF_VAR_WORKER_CONTAINER
             #value: "hyperflowwms/soykb-workflow-worker:v1.0.10-1-g95b7caf"
             #value: "cano601/soykb-workflow:latest" # SoyKB with file block access monitoring
