@@ -1,7 +1,7 @@
 # Hyperflow Worker Pool Operator helm chart
 
-Worker Pool Operator is a Hyperflow extension, 
-that unifies job executors management in execution models based on Worker Pools. 
+Worker Pool Operator is a Hyperflow extension,
+that unifies job executors management in execution models based on Worker Pools.
 Each Worker Pool consists of several Kubernetes resources, like `Deployment`, `PrometheusRule` and `HorizontalPodAutoscalers`.
 This chart is intended to facilitate creation, updating and deletion of those objects based on `WorkerPool` custom resource.
 This chart also configures all external components that are required to autoscale Worker Pools deployments
@@ -23,12 +23,12 @@ helm upgrade -i --debug  --namespace default worker-pool-operator
 |----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------|
 | `nodeSelector`                         | Node selector for `hyperflow-worker-pool-operator` deployment                                                                                                                                                                   | `{}`                                   |
 | `image`                                | Image for `hyperflow-worker-pool-operator` deployment                                                                                                                                                                           | `hyperflowwms/worker-pool-operator:v1.0.0` |
-| `config.data`                          | Content of ConfigMap with templates for Worker Pool child resources. Should contain the following templates: `deployment.yml`, `prometheus-rule.yml`, `scaledobject.yml`. If not provided, the default templates will be used.  | lookup in `values.yaml`                |                               
-| `kube-prometheus-stack.enabled`        | Whether kube-prometheus-stack chart should be deployed                                                                                                                                                                          | `false`                                |    
-| `prometheus-adapter.enabled`           | Whether prometheus-adapter chart should be deployed                                                                                                                                                                             | `false`                                |    
-| `rabbitmq.enabled`                     | Whether rabbitmq chart should be deployed                                                                                                                                                                                       | `false`                                |    
-| `prometheus-rabbitmq-exporter.enabled` | Whether prometheus-rabbitmq-exporter chart should be deployed                                                                                                                                                                   | `false`                                |    
-| `keda.enabled`                         | Whether prometheus-adapter chart should be deployed                                                                                                                                                                             | `false`                                |    
+| `config.data`                          | Content of ConfigMap with templates for Worker Pool child resources. Should contain the following templates: `deployment.yml`, `prometheus-rule.yml`, `scaledobject.yml`. If not provided, the default templates will be used.  | lookup in `values.yaml`                |
+| `kube-prometheus-stack.enabled`        | Whether kube-prometheus-stack chart should be deployed                                                                                                                                                                          | `false`                                |
+| `prometheus-adapter.enabled`           | Whether prometheus-adapter chart should be deployed                                                                                                                                                                             | `false`                                |
+| `rabbitmq.enabled`                     | Whether rabbitmq chart should be deployed                                                                                                                                                                                       | `false`                                |
+| `prometheus-rabbitmq-exporter.enabled` | Whether prometheus-rabbitmq-exporter chart should be deployed                                                                                                                                                                   | `false`                                |
+| `keda.enabled`                         | Whether prometheus-adapter chart should be deployed                                                                                                                                                                             | `false`                                |
 
 Other parameters are set according to dependent charts. Note that if you want to deploy pods on specific nodes, you have to override
 the nodeSelector field in every dependent chart.
@@ -89,7 +89,7 @@ spec:
 
 ### Configure Hyperflow engine for worker pools
 
-Hyperflow engine controls execution model with optional config file `workflow.config.executionModels.json` 
+Hyperflow engine controls execution model with optional config file `workflow.config.executionModels.json`
 that can be created in `/work_dir` directory. By default, Hyperflow executes tasks using job-based execution model.
 Adding a record with the `name` parameter set with the type of tasks to the `workflow.config.executionModels.json`
 will override this setting and change the execution model to worker pools. Optional `queue` parameter
@@ -113,7 +113,7 @@ for mProject, mDiffFit and mBackground tasks:
 
 ## Troubleshooting
 
-After creation or update of any `WorkerPool` object, the Worker Pool Operator updates the `status` of processed resource. 
+After creation or update of any `WorkerPool` object, the Worker Pool Operator updates the `status` of processed resource.
 Successful initialization of WorkerPool results in the following conditions:
 ```
 status:
@@ -130,6 +130,5 @@ status:
 
 After successful initialization, a single instance of every of the following K8s API should be created: `deployment.apps`, `prometheusrules.monitoring.coreos.com`, `scaledobjects.keda.sh`.
 The names of the listed resources defaults to the name of `WorkerPool` object. If any of the listed object is not present,
-it means that an error occurred during initialization. The errors, along with the description, are also included in the `status` field. 
+it means that an error occurred during initialization. The errors, along with the description, are also included in the `status` field.
 You may also investigate the logs of Worker Pool Operator pods.
- 

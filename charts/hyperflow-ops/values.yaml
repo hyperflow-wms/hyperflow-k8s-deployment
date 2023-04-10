@@ -36,7 +36,7 @@ hyperflow-worker-pool-operator:
       hyperflow-wms/nodepool: hfmaster
 
   prometheus-rabbitmq-exporter:
-    enabled: *enable-prometheus-rabbitmq-exporter 
+    enabled: *enable-prometheus-rabbitmq-exporter
     nodeSelector:
       hyperflow-wms/nodepool: hfmaster
 
@@ -46,7 +46,7 @@ hyperflow-worker-pool-operator:
       hyperflow-wms/nodepool: hfmaster
 
   rabbitmq:
-    enabled: *enable-rabbit-mq 
+    enabled: *enable-rabbit-mq
     nodeSelector:
       hyperflow-wms/nodepool: hfmaster
     auth:
@@ -55,7 +55,7 @@ hyperflow-worker-pool-operator:
       erlangCookie: jiwng4pw7NJL3KutMb4pF7k6C5RphXYU
 
   kube-prometheus-stack:
-    enabled: *enable-kube-prometheus-stack 
+    enabled: *enable-kube-prometheus-stack
 
     alertmanager:
       enabled: *enable-alert-manager

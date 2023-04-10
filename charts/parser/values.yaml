@@ -14,9 +14,9 @@ restartPolicy: Never
 
 volumeMounts:
   - mountPath: /work_dir
-    name: workflow-data	
+    name: workflow-data
 
 volumes:
   - name: workflow-data
     persistentVolumeClaim:
-      claimName: nfs  
+      claimName: nfs
