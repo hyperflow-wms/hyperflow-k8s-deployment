@@ -4,7 +4,7 @@
 image: cano601/fbam-log-parser:latest
 imagePullPolicy: Always
 restartPolicy: Never
-  
+
 resources:
   requests:
     cpu: 0

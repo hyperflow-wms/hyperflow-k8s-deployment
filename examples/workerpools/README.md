@@ -1,7 +1,7 @@
 # Use Worker Pools to run a workflow
 
 This example presents steps required to execute workflows using
-**hybrid job-based and worker pools** model. This approach assumes running worker pools for 
+**hybrid job-based and worker pools** model. This approach assumes running worker pools for
 most numerous types of tasks (mProject, mDiffFit, mBackground), while remaining tasks are
 executed as Kubernetes jobs.
 
@@ -9,7 +9,7 @@ executed as Kubernetes jobs.
 
 * Cluster role bindings and node labels are properly configured in cluster (according to [instructions](../../README.md#running-the-workflow))
 * NFS server is deployed in cluster and StorageClass is configured
-* Used Hyperflow engine and job executor images must be compatible with worker pools model.  
+* Used Hyperflow engine and job executor images must be compatible with worker pools model.
 
 ## Running the workflow
 
@@ -128,9 +128,16 @@ with the following content:
 ```
 
 ### Execute the workflow
-* `kubectl exec -it <hyperflow-engine-pod> sh`
-* `cd /work_dir`
-* `hflow run .`
+
+```bash
+kubectl exec -it <hyperflow-engine-pod> sh
+
+export RABBIT_HOSTNAME=rabbitmq.default # or your own rabbitmq url
+cd /work_dir`
+hflow run .
+```
+
+
 
 ### Important notices
 

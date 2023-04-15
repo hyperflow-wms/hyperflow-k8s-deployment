@@ -113,18 +113,18 @@ config:
                 expr: |
                   ceil(
                     0.9
-                    *  
+                    *
                     sum(
                       (
                         rabbitmq_queue_messages_ready{{endpoint="rabbitmq-exporter", queue="{queueName}"}}
-                        + 
+                        +
                         rabbitmq_queue_messages_unacknowledged{{endpoint="rabbitmq-exporter", queue="{queueName}"}}
                       ) or vector(0)
                     )
                     / max(last_over_time(rabbitmq_queue_messages_total{{endpoint="rabbitmq-exporter"}}[15s]) or vector(1))
                     *
                     min(
-                      floor(kube_resourcequota{{namespace="{namespace}", resource="requests.cpu", type="hard"}} / {cpuLimits}) 
+                      floor(kube_resourcequota{{namespace="{namespace}", resource="requests.cpu", type="hard"}} / {cpuLimits})
                       or
                       floor(kube_resourcequota{{namespace="{namespace}", resource="requests.memory", type="hard"}} / {memoryLimits})
                     )
