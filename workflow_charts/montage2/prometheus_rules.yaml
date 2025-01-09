@@ -1,0 +1,110 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: mproject
+  namespace: workerpools
+  labels:
+    prometheus: kube-prometheus
+    release: monitoring
+spec:
+  groups:
+    - name: "mproject-replication-factor"
+      interval: 3s
+      rules:
+        - record: mproject:replication_factor
+          expr: |
+            ceil(
+              0.9
+              *
+              sum(
+                (
+                  rabbitmq_queue_messages_ready{endpoint="rabbitmq-exporter", queue="workerpools.mProject"}
+                  +
+                  rabbitmq_queue_messages_unacknowledged{endpoint="rabbitmq-exporter", queue="workerpools.mProject"}
+                ) or vector(0)
+              )
+              / max(last_over_time(rabbitmq_queue_messages_total{endpoint="rabbitmq-exporter"}[15s]) or vector(1))
+              *
+              min(
+                floor(kube_resourcequota{namespace="workerpools", resource="requests.cpu", type="hard"} / on() group_left() (avg(kube_pod_container_resource_requests{namespace="workerpools", pod=~"mproject-.+", resource="cpu"}) or vector(0.5)))
+                or
+                floor(kube_resourcequota{namespace="workerpools", resource="requests.memory", type="hard"} / on() group_left() (avg(kube_pod_container_resource_requests{namespace="workerpools", pod=~"mproject-.+", resource="memory"}) or vector(524288000)))
+              )
+            )
+          labels:
+            namespace: default
+            service: mproject
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: mdifffit
+  namespace: workerpools
+  labels:
+    prometheus: kube-prometheus
+    release: monitoring
+spec:
+  groups:
+    - name: "mdifffit-replication-factor"
+      interval: 3s
+      rules:
+        - record: mdifffit:replication_factor
+          expr: |
+            ceil(
+              0.9
+              *
+              sum(
+                (
+                  rabbitmq_queue_messages_ready{endpoint="rabbitmq-exporter", queue="workerpools.mDiffFit"}
+                  +
+                  rabbitmq_queue_messages_unacknowledged{endpoint="rabbitmq-exporter", queue="workerpools.mDiffFit"}
+                ) or vector(0)
+              )
+              / max(last_over_time(rabbitmq_queue_messages_total{endpoint="rabbitmq-exporter"}[15s]) or vector(1))
+              *
+              min(
+                floor(kube_resourcequota{namespace="workerpools", resource="requests.cpu", type="hard"} / on() group_left() (avg(kube_pod_container_resource_requests{namespace="workerpools", pod="mdifffit-.+", resource="cpu"}) or vector(0.5)))
+                or
+                floor(kube_resourcequota{namespace="workerpools", resource="requests.memory", type="hard"} / on() group_left() (avg(kube_pod_container_resource_requests{namespace="workerpools", pod="mdifffit-.+", resource="memory"}) or vector(524288000)))
+              )
+            )
+          labels:
+            namespace: default
+            service: mdifffit
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: mbackground
+  namespace: workerpools
+  labels:
+    prometheus: kube-prometheus
+    release: monitoring
+spec:
+  groups:
+    - name: "mbackground-replication-factor"
+      interval: 3s
+      rules:
+        - record: mbackground:replication_factor
+          expr: |
+            ceil(
+              0.9
+              *
+              sum(
+                (
+                  rabbitmq_queue_messages_ready{endpoint="rabbitmq-exporter", queue="workerpools.mBackground"}
+                  +
+                  rabbitmq_queue_messages_unacknowledged{endpoint="rabbitmq-exporter", queue="workerpools.mBackground"}
+                ) or vector(0)
+              )
+              / max(last_over_time(rabbitmq_queue_messages_total{endpoint="rabbitmq-exporter"}[15s]) or vector(1))
+              *
+              min(
+                floor(kube_resourcequota{namespace="workerpools", resource="requests.cpu", type="hard"} / on() group_left() (avg(kube_pod_container_resource_requests{namespace="workerpools", pod=~"mbackground-.+", resource="cpu"}) or vector(0.5)))
+                or
+                floor(kube_resourcequota{namespace="workerpools", resource="requests.memory", type="hard"} / on() group_left() (avg(kube_pod_container_resource_requests{namespace="workerpools", pod=~"mbackground-.+", resource="memory"}) or vector(524288000)))
+              )
+            )
+          labels:
+            namespace: default
+            service: mbackground

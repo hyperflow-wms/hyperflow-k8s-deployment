@@ -1,5 +1,5 @@
 workflow:
-  image: hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest
+  image: matplinta/montage2-workflow-data:degree1.0 # hyperflowwms/soykb-workflow-data:hyperflow-soykb-example-f6f69d6ca3ebd9fe2458804b59b4ef71 # hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest # matplinta/montage2-workflow-data:degree1.0 # hyperflowwms/montage2-workflow-data:montage2-2mass-3.0-latest
 
 nodeSelector:
   hyperflow-wms/nodepool: hfmaster

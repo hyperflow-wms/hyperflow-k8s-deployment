@@ -1,0 +1,6 @@
+apiVersion: v2
+name: hyperflow-vpa
+description: A Helm chart for adding VPA to worker pools mechanism
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

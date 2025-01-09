@@ -5,11 +5,11 @@ storageClasses:
 
     backend:
       name: "s3db"
-      metaurl: "redis://<host>:6379/2"
+      metaurl: "redis://10.100.230.189:6379/2"
       storage: "s3"
       accessKey: ""
       secretKey: ""
-      bucket: "https://<bucket>.eu-central-1.amazonaws.com"
+      bucket: "https://hyperflow-nfs.us-east-1.amazonaws.com"
       formatOptions: "no-update,trash-days=0"
       envs: "{\"JFS_NO_CHECK_OBJECT_STORAGE\":\"1\"}"
     mountOptions:

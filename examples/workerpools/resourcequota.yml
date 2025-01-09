@@ -4,5 +4,7 @@ metadata:
   name: hflow-requests
 spec:
   hard:
-    requests.cpu: "21"
-    requests.memory: 60Gi
+    requests.cpu: "50"
+    requests.memory: 300Gi
+    # requests.cpu: "20"
+    # requests.memory: 100Gi

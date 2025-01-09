@@ -1,0 +1,8 @@
+[
+  {
+    "name": "haplotype_caller"
+  },
+  {
+    "name": "genotype_gvcfs"
+  }
+]

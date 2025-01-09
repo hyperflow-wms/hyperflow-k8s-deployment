@@ -13,6 +13,21 @@ spec:
       securityContext:
         fsGroup: 0
         runAsUser: 0
+      initContainers:
+      - image: alpine/git
+        name: git
+        resources: {{- .Values.resources | toYaml | nindent 12 }}
+        command:
+        - git
+        - clone
+        - --single-branch
+        - --branch
+        - mo-debug
+        - https://github.com/hyperflow-wms/hyperflow-viz-trace.git
+        - /temp-repo
+        volumeMounts:
+        - name: git
+          mountPath: /temp-repo
       containers:
         - name: parser
           image: {{ .Values.image }}
@@ -22,6 +37,7 @@ spec:
             - "/bin/sh"
             - "-c"
             - >
+              cp -v /tmp-repo/hyperflow_viz_trace/main.py /usr/src/app/hyperflow_viz_trace/main.py ;
               if [ $HF_VAR_DEBUG -eq 1 ] ; then
                 while true; do sleep 5 ; done ;
               else
@@ -32,14 +48,18 @@ spec:
                 for dir in `ls -d /work_dir/parsed/*/` ; do
                   echo "viz-trace: processing $dir ..." ;
                   cd $dir ;
-                  hflow-viz-trace --full-nodes-names --show-active-jobs -s . ;
+                  hflow-viz-trace --show-active-jobs -s . ;
                 done ;
               fi ;
           env:
             - name: HF_VAR_DEBUG
               value: '0'
           volumeMounts: {{- .Values.volumeMounts | toYaml | nindent 12 }}
+            - mountPath: /tmp-repo
+              name: git
       volumes: {{- .Values.volumes | toYaml | nindent 8 }}
+        - name: git
+          emptyDir: {}
       {{- with .Values.nodeSelector }}
       nodeSelector: {{ . | toYaml | nindent 8}}
       {{- end }}

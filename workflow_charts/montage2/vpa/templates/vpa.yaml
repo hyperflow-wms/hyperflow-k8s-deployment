@@ -1,0 +1,41 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: mdifffit
+  labels:
+    app: mdifffit
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind:       Deployment
+    name:       mdifffit
+  updatePolicy:
+    updateMode: {{ .Values.updateMode }}
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: mbackground
+  labels:
+    app: mbackground
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind:       Deployment
+    name:       mbackground
+  updatePolicy:
+    updateMode: {{ .Values.updateMode }}
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: mproject
+  labels:
+    app: mproject
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind:       Deployment
+    name:       mproject
+  updatePolicy:
+    updateMode: {{ .Values.updateMode }}

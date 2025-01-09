@@ -1,0 +1,9 @@
+dependencies:
+- name: nfs-server-provisioner
+  repository: https://kubernetes-sigs.github.io/nfs-ganesha-server-and-external-provisioner
+  version: 1.8.0
+- name: hyperflow-worker-pool-operator
+  repository: file://../hyperflow-worker-pool-operator
+  version: 0.1.67
+digest: sha256:a2e07d75147f0d636d3128b698fe2a9200c736b87b3b423fe0c39b0405d471c7
+generated: "2024-06-17T17:04:07.977912+02:00"

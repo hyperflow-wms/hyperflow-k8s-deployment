@@ -1,0 +1,110 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: bwamem
+  namespace: workerpools
+  labels:
+    prometheus: kube-prometheus
+    release: monitoring
+spec:
+  groups:
+    - name: "bwamem-replication-factor"
+      interval: 3s
+      rules:
+        - record: bwamem:replication_factor
+          expr: |
+            ceil(
+              0.9
+              *
+              sum(
+                (
+                  rabbitmq_queue_messages_ready{endpoint="rabbitmq-exporter", queue="workerpools.bwa_mem"}
+                  +
+                  rabbitmq_queue_messages_unacknowledged{endpoint="rabbitmq-exporter", queue="workerpools.bwa_mem"}
+                ) or vector(0)
+              )
+              / max(last_over_time(rabbitmq_queue_messages_total{endpoint="rabbitmq-exporter"}[15s]) or vector(1))
+              *
+              min(
+                floor(kube_resourcequota{namespace="workerpools", resource="requests.cpu", type="hard"} / on() group_left() (avg(kube_pod_container_resource_requests{namespace="workerpools", pod=~"bwamem-.+", resource="cpu"}) or vector(0.5)))
+                or
+                floor(kube_resourcequota{namespace="workerpools", resource="requests.memory", type="hard"} / on() group_left() (avg(kube_pod_container_resource_requests{namespace="workerpools", pod=~"bwamem-.+", resource="memory"}) or vector(524288000)))
+              )
+            )
+          labels:
+            namespace: default
+            service: bwamem
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: correction
+  namespace: workerpools
+  labels:
+    prometheus: kube-prometheus
+    release: monitoring
+spec:
+  groups:
+    - name: "correction-replication-factor"
+      interval: 3s
+      rules:
+        - record: correction:replication_factor
+          expr: |
+            ceil(
+              0.9
+              *
+              sum(
+                (
+                  rabbitmq_queue_messages_ready{endpoint="rabbitmq-exporter", queue="workerpools.Correction.py"}
+                  +
+                  rabbitmq_queue_messages_unacknowledged{endpoint="rabbitmq-exporter", queue="workerpools.Correction.py"}
+                ) or vector(0)
+              )
+              / max(last_over_time(rabbitmq_queue_messages_total{endpoint="rabbitmq-exporter"}[15s]) or vector(1))
+              *
+              min(
+                floor(kube_resourcequota{namespace="workerpools", resource="requests.cpu", type="hard"} / on() group_left() (avg(kube_pod_container_resource_requests{namespace="workerpools", pod="correction-.+", resource="cpu"}) or vector(0.5)))
+                or
+                floor(kube_resourcequota{namespace="workerpools", resource="requests.memory", type="hard"} / on() group_left() (avg(kube_pod_container_resource_requests{namespace="workerpools", pod="correction-.+", resource="memory"}) or vector(524288000)))
+              )
+            )
+          labels:
+            namespace: default
+            service: correction
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: createcorrected
+  namespace: workerpools
+  labels:
+    prometheus: kube-prometheus
+    release: monitoring
+spec:
+  groups:
+    - name: "createcorrected-replication-factor"
+      interval: 3s
+      rules:
+        - record: createcorrected:replication_factor
+          expr: |
+            ceil(
+              0.9
+              *
+              sum(
+                (
+                  rabbitmq_queue_messages_ready{endpoint="rabbitmq-exporter", queue="workerpools.Create_Corrected_AllLRReads.py"}
+                  +
+                  rabbitmq_queue_messages_unacknowledged{endpoint="rabbitmq-exporter", queue="workerpools.Create_Corrected_AllLRReads.py"}
+                ) or vector(0)
+              )
+              / max(last_over_time(rabbitmq_queue_messages_total{endpoint="rabbitmq-exporter"}[15s]) or vector(1))
+              *
+              min(
+                floor(kube_resourcequota{namespace="workerpools", resource="requests.cpu", type="hard"} / on() group_left() (avg(kube_pod_container_resource_requests{namespace="workerpools", pod=~"createcorrected-.+", resource="cpu"}) or vector(0.5)))
+                or
+                floor(kube_resourcequota{namespace="workerpools", resource="requests.memory", type="hard"} / on() group_left() (avg(kube_pod_container_resource_requests{namespace="workerpools", pod=~"createcorrected-.+", resource="memory"}) or vector(524288000)))
+              )
+            )
+          labels:
+            namespace: default
+            service: createcorrected

@@ -1,5 +1,5 @@
 worker-pools:
-  enabled: false # Set to true if using worker pools execution model
+  enabled: true # Set to true if using worker pools execution model
   enable-prometheus-adapter: &enable-prometheus-adapter true
   enable-prometheus-rabbitmq-exporter: &enable-prometheus-rabbitmq-exporter true
   enable-keda: &enable-keda true
@@ -9,6 +9,8 @@ worker-pools:
   enable-grafana: &enable-grafana true
   enable-prometheus-operator: &enable-prometheus-operator true
   enable-prometheus: &enable-prometheus true
+  enable-vertical-pod-autoscaler: &enable-vertical-pod-autoscaler true
+  enable-kube-state-metrics: &enable-kube-state-metrics false
 
 
 #####################################
@@ -19,8 +21,13 @@ nfs-server-provisioner:
     hyperflow-wms/nodepool: hfmaster
   persistence:
     enabled: true
+    storageClass: "local-path" # TODO standard
+    # storageClass: "standard"
+    # storageClass: ebs-sc
     accessMode: ReadWriteOnce
-    size: 50Gi
+    size: 100Gi
+  # storageClass:
+  #   defaultClass: true
 
 
 #########################################
@@ -80,3 +87,13 @@ hyperflow-worker-pool-operator:
       prometheusSpec:
         nodeSelector:
           hyperflow-wms/nodepool: hfmaster
+    
+  vertical-pod-autoscaler:
+    enabled: *enable-vertical-pod-autoscaler
+    nodeSelector:
+      hyperflow-wms/nodepool: hfmaster
+
+  kube-state-metrics:
+    enabled: *enable-kube-state-metrics
+    nodeSelector:
+      hyperflow-wms/nodepool: hfmaster

@@ -1,0 +1,7 @@
+workerRequests:
+  cpu: "0.25" # 0.1 # 0.25 # 1.0
+  memory: "262144000" # 102400000 # 262144000 # 1048576000
+
+quotaRequests:
+  cpu: "20"
+  memory: 10Gi

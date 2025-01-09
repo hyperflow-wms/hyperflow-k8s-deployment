@@ -1,0 +1,41 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: bwamem
+  labels:
+    app: bwamem
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind:       Deployment
+    name:       bwamem
+  updatePolicy:
+    updateMode: {{ .Values.updateMode }}
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: correction
+  labels:
+    app: correction
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind:       Deployment
+    name:       correction
+  updatePolicy:
+    updateMode: {{ .Values.updateMode }}
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: createcorrected
+  labels:
+    app: createcorrected
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind:       Deployment
+    name:       createcorrected
+  updatePolicy:
+    updateMode: {{ .Values.updateMode }}

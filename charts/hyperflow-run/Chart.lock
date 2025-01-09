@@ -1,0 +1,15 @@
+dependencies:
+- name: redis
+  repository: file://../redis
+  version: 0.1.0
+- name: nfs-volume
+  repository: file://../nfs-volume
+  version: 0.1.0
+- name: hyperflow-engine
+  repository: file://../hyperflow-engine
+  version: 0.1.0
+- name: hyperflow-nfs-data
+  repository: file://../hyperflow-nfs-data
+  version: 0.1.0
+digest: sha256:e9e0bfdda08bf58eda62b7e1d89b900ee69e36f400dd2460ad2800a70dbb125a
+generated: "2023-04-20T21:52:28.15447+02:00"

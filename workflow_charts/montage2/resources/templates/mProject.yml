@@ -1,0 +1,16 @@
+apiVersion: hyperflow.agh.edu.pl/v1
+kind: WorkerPool
+metadata:
+  name: mproject
+spec:
+  taskType: mProject
+  image: hyperflowwms/montage2-worker:je-1.3.2 # hyperflowwms/soykb-workflow-worker
+  rabbitHostname: rabbitmq.default
+  prometheusUrl: http://monitoring-prometheus.default:9090
+  redisUrl: redis://redis:6379
+  minReplicaCount: 0
+  maxReplicaCount: 200
+  initialResources:
+    requests:
+      cpu: {{ .Values.workerRequests.cpu }}
+      memory: {{ .Values.workerRequests.memory }}

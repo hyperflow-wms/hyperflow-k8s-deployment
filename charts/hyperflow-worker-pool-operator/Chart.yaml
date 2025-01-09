@@ -2,7 +2,7 @@ apiVersion: v2
 name: hyperflow-worker-pool-operator
 description: A Helm chart for Hyperflow Worker Pools operator
 type: application
-version: 0.1.0
+version: 0.1.67
 appVersion: "1.0.0"
 
 dependencies:
@@ -15,7 +15,7 @@ dependencies:
     repository: https://prometheus-community.github.io/helm-charts
     condition: prometheus-adapter.enabled
   - name: rabbitmq
-    version: 10.3.*
+    version: 12.1.*
     repository: https://charts.bitnami.com/bitnami
     condition: rabbitmq.enabled
   - name: prometheus-rabbitmq-exporter
@@ -23,6 +23,14 @@ dependencies:
     repository: https://prometheus-community.github.io/helm-charts
     condition: prometheus-rabbitmq-exporter.enabled
   - name: keda
-    version: 2.8.2
+    version: 2.9.*
     repository: https://kedacore.github.io/charts
     condition: keda.enabled
+  - name: vertical-pod-autoscaler
+    version: 9.*
+    repository: https://cowboysysop.github.io/charts
+    condition: vertical-pod-autoscaler.enabled
+  - name: kube-state-metrics
+    version: 3.0.*
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: kube-state-metrics.enabled

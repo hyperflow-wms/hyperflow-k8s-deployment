@@ -6,7 +6,7 @@ wf-data-image: &wf-data-image hyperflowwms/montage2-workflow-data:montage2-2mass
 wf-worker-image: &wf-worker-image hyperflowwms/montage2-worker:je-1.3.2
 
 worker-pools:
-  enabled: false # Set to true if using worker pools execution model
+  enabled: true # Set to true if using worker pools execution model
   enable-prometheus-adapter: &enable-prometheus-adapter true
   enable-prometheus-rabbitmq-exporter: &enable-prometheus-rabbitmq-exporter true
   enable-keda: &enable-keda true

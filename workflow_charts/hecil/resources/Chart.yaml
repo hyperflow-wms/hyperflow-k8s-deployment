@@ -1,0 +1,6 @@
+apiVersion: v2
+name: hyperflow-workerpools
+description: A Helm chart for adding montage2 worker pools resources
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

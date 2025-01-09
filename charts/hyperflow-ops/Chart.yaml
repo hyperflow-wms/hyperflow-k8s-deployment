@@ -2,13 +2,13 @@ apiVersion: v2
 name: hyperflow-operations
 description: Umbrella chart for deployment of Hyperflow WMS infrastructure services
 type: application
-version: 0.1.0
+version: 0.1.60
 appVersion: "1.0.0"
 
 dependencies:
   - name: nfs-server-provisioner
     repository: https://kubernetes-sigs.github.io/nfs-ganesha-server-and-external-provisioner
-    version: 1.6.*
+    version: 1.8.*
   - name: hyperflow-worker-pool-operator
     repository: file://../hyperflow-worker-pool-operator
     version: 0.*

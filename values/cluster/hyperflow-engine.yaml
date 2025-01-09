@@ -34,7 +34,7 @@ containers:
           while true; do sleep 5 ; done ;
         fi ;
   worker:
-    image: hyperflowwms/montage2-worker:je-1.3.2
+    image: hyperflowwms/montage2-worker:je-1.3.2 # hyperflowwms/montage2-worker:je-1.3.2 # hyperflowwms/soykb-workflow-worker
     additionalVariables:
       - name: HF_VAR_DEBUG
         value: "1"

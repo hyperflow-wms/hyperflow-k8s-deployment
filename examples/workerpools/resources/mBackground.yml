@@ -4,7 +4,7 @@ metadata:
   name: mbackground
 spec:
   taskType: mBackground
-  image: hyperflowwms/montage2-worker:je-1.3.0
+  image: hyperflowwms/montage2-worker:je-1.3.0 # hyperflowwms/soykb-workflow-worker
   rabbitHostname: rabbitmq.default
   prometheusUrl: http://monitoring-prometheus.default:9090
   redisUrl: redis://redis:6379
@@ -12,5 +12,5 @@ spec:
   maxReplicaCount: 50
   initialResources:
     requests:
-      cpu: "0.5"
-      memory: "524288000"
+      cpu: "0.25" # 0.1 # 0.25 # 1.0
+      memory: "262144000" # 102400000 # 262144000 # 1048576000
