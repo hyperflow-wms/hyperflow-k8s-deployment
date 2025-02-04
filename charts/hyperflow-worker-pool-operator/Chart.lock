@@ -1,18 +1,18 @@
 dependencies:
 - name: kube-prometheus-stack
   repository: https://prometheus-community.github.io/helm-charts
-  version: 40.0.0
+  version: 68.4.5
 - name: prometheus-adapter
   repository: https://prometheus-community.github.io/helm-charts
-  version: 3.4.0
+  version: 4.11.0
 - name: rabbitmq
   repository: https://charts.bitnami.com/bitnami
-  version: 10.3.5
+  version: 15.2.5
 - name: prometheus-rabbitmq-exporter
   repository: https://prometheus-community.github.io/helm-charts
-  version: 1.3.0
+  version: 1.13.0
 - name: keda
   repository: https://kedacore.github.io/charts
-  version: 2.8.2
-digest: sha256:f8788443dddd458614bb76db9dd6832c62c4bdf7b9d48aa07a5d3ccc08fa00c9
-generated: "2022-09-14T20:15:50.404697882+02:00"
+  version: 2.16.1
+digest: sha256:fc398c8ebe86651caac6cbdd6ee063ec99352af6889d92e5310defb0aa54c9eb
+generated: "2025-02-04T18:35:48.686752526+01:00"
