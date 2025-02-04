@@ -308,3 +308,6 @@ kube-prometheus-stack:
     prometheusSpec:
       scrapeInterval: 5s
       ruleSelectorNilUsesHelmValues: false
+      serviceMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelectorNilUsesHelmValues: false
+      probeSelectorNilUsesHelmValues: false
