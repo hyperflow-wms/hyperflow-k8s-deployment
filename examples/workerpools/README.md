@@ -144,5 +144,23 @@ hflow run .
 * If an error occurred during execution, all created queues must be manually purged or deleted in RabbitMQ, 
 before starting subsequent workflow.  Hyperflow WMS does not implement queue deletion at the moment.
 
+## Debugging
+
+You can expose Prometheus and RabbitMQ GUIs using:
+```
+kubectl port-forward svc/monitoring-prometheus 9090:9090  
+kubectl port-forward svc/rabbitmq 15672
+```
+
+Then open a browser and go to `http://localhost:9090` (Prometheus) and `http://localhost:15672` (RabbitMQ)
+
+In Prometheus, you can check e.g. if the following query works:
+```
+rabbitmq_queue_messages_total{endpoint="rabbitmq-exporter"}
+```
+The full query used to calculate the desired number of replicas for HPA can be examined in the corresponding PrometheusRules objects, e.g.:
+```
+ kubectl get prometheusrules mproject -o yaml
+```
 
 
