@@ -18,11 +18,11 @@ spec:
   maxReplicaCount: {{ $merged.maxReplicaCount }}
   initialResources:
     requests:
-      cpu: {{ $merged.initialResources.requests.cpu }}
-      memory: {{ $merged.initialResources.requests.memory }}
+      cpu: {{ $merged.initialResources.requests.cpu | quote }}
+      memory: {{ $merged.initialResources.requests.memory | quote }}
     limits:
-      cpu: {{ $merged.initialResources.limits.cpu }}
-      memory: {{ $merged.initialResources.limits.memory }}
+      cpu: {{ $merged.initialResources.limits.cpu | quote }}
+      memory: {{ $merged.initialResources.limits.memory | quote }}
 {{- end }}
 {{- end }}
 {{- end }}
