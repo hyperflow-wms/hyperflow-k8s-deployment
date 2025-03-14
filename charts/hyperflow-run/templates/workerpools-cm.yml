@@ -1,0 +1,17 @@
+{{- if (index .Values "workerPools" "enabled") }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worker-config
+data:
+  workflow.config.executionModels.json: |-
+    [
+    {{- $pools := (index .Values "workerPools").pools -}}
+    {{- range $index, $pool := $pools -}}
+      {{- if $index }},{{- end }}
+      {
+        "name": {{ $pool.taskType | quote }}
+      }
+    {{- end -}}
+    ]
+{{- end -}}

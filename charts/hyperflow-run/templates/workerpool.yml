@@ -1,0 +1,28 @@
+{{- if (index .Values "workerPools").enabled }}
+{{- if (index .Values "workerPools").pools }}
+{{- range $pool := (index .Values "workerPools").pools }}
+{{- $base := deepCopy $pool }}
+{{- $merged := mustMerge $base (index $.Values "workerPools").workerPoolDefaults }}
+---
+apiVersion: hyperflow.agh.edu.pl/v1
+kind: WorkerPool
+metadata:
+  name: {{ $merged.name }}
+spec:
+  taskType: {{ $merged.taskType }}
+  image: {{ $merged.image }}
+  rabbitHostname: {{ $merged.rabbitHostname }}
+  prometheusUrl: {{ $merged.prometheusUrl }}
+  redisUrl: {{ $merged.redisUrl }}
+  minReplicaCount: {{ $merged.minReplicaCount }}
+  maxReplicaCount: {{ $merged.maxReplicaCount }}
+  initialResources:
+    requests:
+      cpu: {{ $merged.initialResources.requests.cpu }}
+      memory: {{ $merged.initialResources.requests.memory }}
+    limits:
+      cpu: {{ $merged.initialResources.limits.cpu }}
+      memory: {{ $merged.initialResources.limits.memory }}
+{{- end }}
+{{- end }}
+{{- end }}
