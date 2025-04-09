@@ -173,6 +173,8 @@ hyperflow-engine:
                         value: "${enableTracing}"
                       - name: HF_VAR_ENABLE_OTEL
                         value: "${enableOtel}"
+                      - name: HF_VAR_OPT_URL
+                        value: "http://hf-obs-opentelemetry-collector"
                       - name: HF_VAR_OT_PARENT_ID
                         value: "${optParentId}"
                       - name: HF_VAR_OT_TRACE_ID
@@ -197,6 +199,26 @@ hyperflow-engine:
                         valueFrom:
                           fieldRef:
                             fieldPath: spec.serviceAccountName
+                      - name: HF_LOG_CPU_REQUEST
+                        valueFrom:
+                          resourceFieldRef:
+                            containerName: test
+                            resource: requests.cpu
+                      - name: HF_LOG_CPU_LIMIT
+                        valueFrom:
+                          resourceFieldRef:
+                            containerName: test
+                            resource: limits.cpu
+                      - name: HF_LOG_MEM_REQUEST
+                        valueFrom:
+                          resourceFieldRef:
+                            containerName: test
+                            resource: requests.memory
+                      - name: HF_LOG_MEM_LIMIT
+                        valueFrom:
+                          resourceFieldRef:
+                            containerName: test
+                            resource: limits.memory
                       - name: HF_VAR_FS_MONIT_ENABLED
                         value: "0"
                       - name: HF_VAR_FS_MONIT_COMMAND

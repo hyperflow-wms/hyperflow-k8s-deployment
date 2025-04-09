@@ -10,6 +10,7 @@ config:
         namespace: {namespace}
         labels:
           app: {poolName}
+          origin: hyperflow
       spec:
         replicas: {minReplicas}
         selector:
@@ -47,6 +48,10 @@ config:
                     value: "0"
                   - name: HF_VAR_NUM_RETRIES
                     value: "1"
+                  - name: HF_VAR_ENABLE_OTEL
+                    value: "1"
+                  - name: HF_VAR_OPT_URL
+                    value: "http://hf-obs-opentelemetry-collector"
                   - name: HF_LOG_NODE_NAME
                     valueFrom:
                       fieldRef:
@@ -293,6 +298,8 @@ kube-prometheus-stack:
     rbac:
       create: true
     releaseLabel: true
+    metricLabelsAllowlist:
+      - deployments=[origin,app]
     prometheus:
       monitor:
         enabled: true
