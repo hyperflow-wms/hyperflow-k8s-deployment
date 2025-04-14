@@ -68,7 +68,7 @@ with the following content (when running the default workflow, otherwise adjust 
 ```
 
 ### Execute the workflow
-
+The workflow needs to be started manually in the Hyperflow engine Pod:
 ```bash
 kubectl exec -it <hyperflow-engine-pod> sh
 
@@ -83,7 +83,13 @@ If an error occurred during execution, all created queues must be manually purge
 before starting subsequent workflow.  Hyperflow WMS does not implement queue deletion at the moment.
 
 
-## Debugging
+## Monitoring and debugging
+### Watching worker pool deployments
+You can observe how worker pools scale up and down by watching their deployments:
+```
+kubectl get deploy [-n <workerpools_namespace>] -w
+```
+
 ### Examining WorkerPool resources
 
 You can investigate whether the worker pools are properly initialized by checking the `status`
