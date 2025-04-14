@@ -4,11 +4,11 @@ Hyperflow supports an advanced task execution model based on **autoscalable work
 In this model, separate worker pools are created for most numerous types of tasks (e.g. mProject, mDiffFit, mBackground in Montage), while other tasks are usually executed as Kubernetes jobs (default execution
 model).
 
-<img src="https://github.com/hyperflow-wms/hyperflow-k8s-deployment/blob/master/examples/workerpools/worker-pool-model.jpg" width="500">
+<img src="https://github.com/hyperflow-wms/hyperflow-k8s-deployment/blob/master/examples/workerpools/worker-pool-model.svg" width="500">
 
 The implementation is based on a custom [WorkerPool operator](https://github.com/hyperflow-wms/hyperflow-worker-pool-operator). The [Keda autoscaler](https://keda.sh) enables scaling of the worker pool deployments based on the length of their task queues (implemented using RabbitMQ) and also scaling them to zero. 
 
-If multiple worker pools run simultaneously, they use the chunk of the available resources portional to length of their task queues.
+If multiple worker pools run simultaneously, they will scale within the available resource quota, proportionally to the lengths of their task queues (tasks with longer queues will get a larger chunk of the available resources).
 
 ## Running a sample workflow
 
