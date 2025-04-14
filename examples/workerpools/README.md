@@ -1,24 +1,16 @@
-# Use Worker Pools to run a workflow
+# Worker Pools execution model
 
-This example presents steps required to execute workflows using
-**hybrid job-based and worker pools** model. This approach assumes running worker pools for
-most numerous types of tasks (mProject, mDiffFit, mBackground), while remaining tasks are
-executed as Kubernetes jobs.
+Hyperflow supports an advanced task execution model based on **autoscalable worker pools**. 
+In this model, separate worker pools are created for most numerous types of tasks (e.g. mProject, mDiffFit, mBackground in Montage), while other tasks are usually executed as Kubernetes jobs (default execution
+model).
 
-## Prerequisites
+<img src="https://github.com/hyperflow-wms/hyperflow-k8s-deployment/blob/master/examples/workerpools/worker-pool-model.jpg" width="500">
 
-* Cluster role bindings and node labels are properly configured in cluster (according to [instructions](../../README.md#running-the-workflow))
-* NFS server is deployed in cluster and StorageClass is configured
-* Used Hyperflow engine and job executor images must be compatible with worker pools model.
+The implementation is based on a custom [WorkerPool operator](https://github.com/hyperflow-wms/hyperflow-worker-pool-operator). The [Keda autoscaler](https://keda.sh) enables scaling of the worker pool deployments based on the length of their task queues (implemented using RabbitMQ) and also scaling them to zero. 
 
-## Running the workflow
+If multiple worker pools run simultaneously, they use the chunk of the available resources portional to length of their task queues.
 
-### Install Worker Pool Operator
-
-Assuming you are in repository main directory, install the chart as follows:
-```
-helm install --values values/cluster/hyperflow-worker-pool-operator.yaml --namespace default worker-pool-operator charts/hyperflow-worker-pool-operator
-```
+## Running a sample workflow
 
 ### [Optional] Create workerpools namespace
 
@@ -26,40 +18,76 @@ helm install --values values/cluster/hyperflow-worker-pool-operator.yaml --names
 kubectl create namespace workerpools
 ```
 
-### Install Hyperflow charts
+### Clone repositories with Helm charts
 
-Assuming you are in repository main directory, install the chart as follows:
 ```
-helm install nfs-pv charts/nfs-volume --namespace <namespace> --values values/cluster/nfs-volume.yaml
-helm install redis charts/redis --namespace <namespace> --values values/cluster/redis.yml
-helm install hyperflow-nfs-data --namespace <namespace> charts/hyperflow-nfs-data --values values/cluster/hyperflow-nfs-data.yaml
-helm install hyperflow-engine --namespace <namespace> charts/hyperflow-engine --values values/cluster/hyperflow-engine.yaml
+git clone https://github.com/hyperflow-wms/hyperflow-k8s-deployment
+git clone https://github.com/hyperflow-wms/hyperflow-worker-pool-operator
+```
+
+### Install Helm charts
+
+Worker pools are configured in the [values.yaml](https://github.com/hyperflow-wms/hyperflow-k8s-deployment/blob/master/charts/hyperflow-run/values.yaml) of the `hyperflow-run` chart. Use preset
+values to run a small Montage workflow. Make sure the `workerPools.enabled` flag is set to `true`.
+
+Install the charts as follows (use `--namespace <namespace>` if using specific namespace):
+```
+cd hyperflow-k8s-deployment/charts
+helm upgrade --dependency-update -i hf-ops hyperflow-ops
+helm upgrade --dependency-update -i hf-run-montage hyperflow-run
 ```
 
 ### Create ResourceQuota
 
-Current implementation of Worker Pools Operator requires `ResourceQuota` object to be created
+The implementation of the Worker Pools Operator requires `ResourceQuota` object to be created
 in the namespace where workflows are executed. Such an object is used in PrometheusRules to
-obtain the maximum amount of resources designated to processing a workflow. Sample `ResourceQuota`
-manifest is placed in [resourcequota.yml](resourcequota.yml) file. To create this resource, execute 
-the following command Assuming you are in repository main directory):
+obtain the maximum amount of resources designated to processing a workflow. Currently this step is done manually. A sample `ResourceQuota` manifest is placed in [resourcequota.yml](resourcequota.yml) file. To create this resource, execute the following command Assuming you are in repository main directory):
 ```
 kubectl create --namespace <namespace> -f examples/workerpools/resourcequota.yml
 ```
-The `ResourceQuota` object should be adjusted to the total allocatable resources in the `hfworker` nodes. 
-Resource limits does not need to be specified. 
+The `ResourceQuota` object should be adjusted to the total allocatable resources in the worker nodes used to
+run workflow tasks (labelled `hyperflow-wms/nodepool: hfworker`). 
+Resource limits do not need to be specified. 
 
+### Configure Hyperflow engine
 
-### Create WorkerPool resources
-
-Sample WorkerPool manifests for mProject, mDiffFit, mBackground are placed in [resources](resources) directory.
-To create pools execute the following command (Assuming you are in repository main directory):
+Create `workflow.config.executionModels.json` file in the `/work_dir` directory of the `hyperflow-engine` pod
+with the following content:
 ```
-kubectl create --namespace <namespace> -f examples/workerpools/resources
+[
+  {
+    "name": "mProject"
+  },
+  {
+    "name": "mDiffFit"
+  },
+  {
+    "name": "mBackground"
+  }
+]
 ```
 
-Next, investigate whether the worker pools are properly initialized, by checking the `status`
-field of the created resources. It should look like the following:
+### Execute the workflow
+
+```bash
+kubectl exec -it <hyperflow-engine-pod> sh
+
+export RABBIT_HOSTNAME=rabbitmq.default # or your own rabbitmq url
+cd /work_dir`
+hflow run .
+```
+
+### Cleanup - important
+
+If an error occurred during execution, all created queues must be manually purged or deleted in RabbitMQ, 
+before starting subsequent workflow.  Hyperflow WMS does not implement queue deletion at the moment.
+
+
+## Debugging
+### Examining WorkerPool resources
+
+You can investigate whether the worker pools are properly initialized by checking the `status`
+field of the created resources, for example:
 
 ```
 # Example command
@@ -101,52 +129,18 @@ Status:
   Worker Pool Name:  mproject
 ```
 
-You can also check, whether `Deployment`, `PrometheusRule` and `ScaledObject` resources were created for each pool. Example command:
+You can also check, whether `Deployment`, `PrometheusRule` and `ScaledObject` resources were created for each pool:
 
 ```bash
-kubectl --namespace <workerpools_namespace> get all,prometheusrules.monitoring.coreos.com,scaledobjects.keda.sh
+kubectl [--namespace <workerpools_namespace>] get all,prometheusrules.monitoring.coreos.com,scaledobjects.keda.sh
 ```
 
-In case of any mismatch, investigate operator pod logs.
-
-### Configure Hyperflow engine
-
-Create `workflow.config.executionModels.json` file in the `/work_dir` directory of the `hyperflow-engine` pod
-with the following content:
-```
-[
-  {
-    "name": "mProject"
-  },
-  {
-    "name": "mDiffFit"
-  },
-  {
-    "name": "mBackground"
-  }
-]
-```
-
-### Execute the workflow
-
-```bash
-kubectl exec -it <hyperflow-engine-pod> sh
-
-export RABBIT_HOSTNAME=rabbitmq.default # or your own rabbitmq url
-cd /work_dir`
-hflow run .
-```
+In case of any problem, investigate operator pod logs.
 
 
+### Using Prometheus and RabbitMQ web GUIs
 
-### Important notices
-
-* If an error occurred during execution, all created queues must be manually purged or deleted in RabbitMQ, 
-before starting subsequent workflow.  Hyperflow WMS does not implement queue deletion at the moment.
-
-## Debugging
-
-You can expose Prometheus and RabbitMQ GUIs using:
+You can connect to Prometheus and RabbitMQ GUIs, e.g., to check if RabbitMQ queue metrics are visible and queries work. To this end, you need to forward the ports:
 ```
 kubectl port-forward svc/monitoring-prometheus 9090:9090  
 kubectl port-forward svc/rabbitmq 15672
