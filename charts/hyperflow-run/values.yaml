@@ -12,10 +12,10 @@ wf-input-data-from-docker: &input-from-docker true
 ####   Define worker pools   ####
 #################################
 workerPools:
-  enabled: true # If true, WorkerPool resources will be created; requires WorkerPool operator to be installed
+  enabled: &wfpoolsenabled true # If true, WorkerPool resources will be created; requires WorkerPool operator to be installed
   workerPoolDefaults: # default settings, override in individual 'pools' resources
     image: hyperflowwms/montage2-worker:je-1.3.0
-    rabbitHostname: rabbitmq.default
+    rabbitHostname: &rabbithostname rabbitmq.default
     prometheusUrl: http://monitoring-prometheus.default:9090
     redisUrl: redis://redis:6379
     minReplicaCount: 0
@@ -53,29 +53,6 @@ hyperflow-nfs-data:
       name: workflow-data
 
 
-#########################################
-####  Configuration of worker pools  ####
-#########################################
-worker-pools:
-  configurations:
-    - taskType: mProject
-      image: *wf-worker-image
-      requests:
-        cpu: 0.7
-        memory: 524288000
-      minReplicaCount: 0
-      maxReplicaCount: 50
-    - taskType: mDiffFit
-    - taskType: mBackground
-  defaults:
-    image: *wf-worker-image
-    requests:
-      cpu: 0.7
-      memory: 524288000
-    minReplicaCount: 0
-    maxReplicaCount: 50
-
-
 #####################
 ####    Redis    ####
 #####################
@@ -88,6 +65,10 @@ redis:
 ####  Hyperflow Engine  ####
 ############################
 hyperflow-engine:
+  workerPools:
+    enabled: *wfpoolsenabled
+    workerPoolDefaults:
+      rabbitHostname: *rabbithostname
 #  resources:
 #    requests:
 #      cpu: 1.5
