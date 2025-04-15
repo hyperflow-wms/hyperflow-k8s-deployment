@@ -1,0 +1,15 @@
+replicas: 1
+
+config:
+  opensearch.yml: |
+    cluster.name: opensearch-cluster
+    network.host: 0.0.0.0
+    plugins:
+      security:
+        disabled: true
+
+extraEnvs:
+  - name: OPENSEARCH_JAVA_OPTS
+    value: "-Xms512m -Xmx512m"
+  - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
+    value: "Hyperflow1!"
