@@ -170,6 +170,8 @@ hyperflow-engine:
                         value: "1"
                       - name: HF_VAR_ENABLE_TRACING
                         value: "${enableTracing}"
+                      - name: HF_VAR_ENABLE_OTEL
+                        value: "${enableOtel}"
                       - name: HF_VAR_OT_PARENT_ID
                         value: "${optParentId}"
                       - name: HF_VAR_OT_TRACE_ID

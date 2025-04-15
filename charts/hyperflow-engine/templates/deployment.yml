@@ -63,6 +63,8 @@ spec:
             # URL for OpenTelemetry collector which will collect signals from engine
           - name: HF_VAR_ENABLE_TRACING
             value: "false"
+          - name: HF_VAR_ENABLE_OTEL
+            value: "false"
           - name: HF_VAR_OPT_URL
             value: nil
           - name: HF_VAR_function

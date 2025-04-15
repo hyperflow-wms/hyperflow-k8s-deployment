@@ -1,0 +1,63 @@
+mode: "statefulset"
+
+image:
+  repository: "otel/opentelemetry-collector"
+
+command:
+  name: "otelcol"
+
+config:
+  extensions:
+    health_check:
+      endpoint: 0.0.0.0:13133
+    pprof:
+      endpoint: 0.0.0.0:1777
+    zpages:
+      endpoint: 0.0.0.0:55679
+
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+  processors:
+    batch: {}
+
+  exporters:
+    otlp/traces:
+      endpoint: dataprepper-data-prepper:21890
+      tls:
+        insecure: true
+        insecure_skip_verify: true
+    otlp/metrics:
+      endpoint: dataprepper-data-prepper:21891
+      tls:
+        insecure: true
+        insecure_skip_verify: true
+    otlp/logs:
+      endpoint: dataprepper-data-prepper:21892
+      tls:
+        insecure: true
+        insecure_skip_verify: true
+    debug:
+      verbosity: detailed
+
+  service:
+    pipelines:
+      traces:
+        receivers: [ otlp ]
+        processors: [ batch ]
+        exporters: [ debug, otlp/traces ]
+      metrics:
+        receivers: [ otlp ]
+        processors: [ batch ]
+        exporters: [ debug, otlp/metrics ]
+      logs:
+        receivers: [ otlp ]
+        processors: [ batch ]
+        exporters: [ debug, otlp/logs ]
+
+    extensions: [ health_check, pprof, zpages ]
