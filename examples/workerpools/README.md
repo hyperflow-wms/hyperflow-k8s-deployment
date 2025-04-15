@@ -70,9 +70,8 @@ with the following content (when running the default workflow, otherwise adjust 
 ### Execute the workflow
 The workflow needs to be started manually in the Hyperflow engine Pod:
 ```bash
-kubectl exec -it <hyperflow-engine-pod> sh
+kubectl exec -it <hyperflow-engine-pod> -- sh
 
-export RABBIT_HOSTNAME=rabbitmq.default # or your own rabbitmq url
 cd /work_dir`
 hflow run .
 ```
