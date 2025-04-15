@@ -88,6 +88,10 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          {{- if (.Values.workerPools).enabled }}
+          - name: RABBIT_HOSTNAME
+            value: {{ .Values.workerPools.workerPoolDefaults.rabbitHostname | quote }}
+          {{- end }}
           {{- with .Values.containers.worker.additionalVariables }}
           {{ . | toYaml | nindent 10 }}
           {{- end }}
@@ -99,6 +103,10 @@ spec:
           {{- with .Values.containers.hyperflow.volumeMounts }}
           volumeMounts: {{ . | toYaml | nindent 10}}
           {{- end }}
+          resources:
+            requests:
+              cpu: 200m
+              memory: 100Mi
         - name: hflow-tools
           image: {{ .Values.containers.tools.image }}
           imagePullPolicy: Always
