@@ -54,6 +54,7 @@ Resource limits do not need to be specified.
 Create `workflow.config.executionModels.json` file in the `/work_dir` directory of the `hyperflow-engine` pod
 with the following content (when running the default workflow, otherwise adjust the task names):
 ```
+cat > workflow.config.executionModels.json << EOF
 [
   {
     "name": "mProject"
@@ -65,6 +66,7 @@ with the following content (when running the default workflow, otherwise adjust 
     "name": "mBackground"
   }
 ]
+EOF
 ```
 
 ### Execute the workflow
