@@ -1,0 +1,49 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: HfKlaster
+  region: us-east-1
+  version: "1.32"  # change based on actual version
+
+managedNodeGroups:
+  - name: HfMasterNodes
+    instanceType: m5.large
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 2
+    volumeSize: 80 # disk in GB
+    labels:
+      hyperflow-wms/nodepool: hfmaster
+    iam:
+      instanceRoleARN: arn:aws:iam::891376999904:role/LabRole
+  - name: HfWorkerNodes
+    instanceType: t3.medium
+    desiredCapacity: 8 
+    minSize: 8
+    maxSize: 8
+    labels:
+      hyperflow-wms/nodepool: hfworker
+    iam:
+      instanceRoleARN: arn:aws:iam::891376999904:role/LabRole
+
+addons:
+  - name: aws-ebs-csi-driver
+    version: v1.43.0-eksbuild.1
+  - name: coredns
+    version: v1.11.4-eksbuild.2
+  - name: eks-node-monitoring-agent
+    version: v1.2.0-eksbuild.1
+  - name: eks-pod-identity-agent
+    version: v1.3.4-eksbuild.1
+  - name: external-dns
+    version: v0.16.1-eksbuild.2
+  - name: kube-proxy
+    version: v1.32.0-eksbuild.2
+  - name: metrics-server
+    version: v0.7.2-eksbuild.3
+  - name: vpc-cni
+    version: v1.19.2-eksbuild.1
+
+iam:
+  serviceRoleARN: arn:aws:iam::891376999904:role/LabRole
