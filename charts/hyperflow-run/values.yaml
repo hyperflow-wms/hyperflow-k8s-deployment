@@ -1,11 +1,12 @@
 # Hyperflow engine image
-hf-engine-image: &hf-engine-image hyperflowwms/hyperflow:v1.7.0
+hf-engine-image: &hf-engine-image hyperflowwms/hyperflow:v1.7.2
 
 # Change these to run a different workflow
 wf-worker-image: &wf-worker-image hyperflowwms/montage2-worker:je-1.3.2
 
 # Set this image to workflow input data
-wf-input-data-image: &wf-data-image hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest
+#wf-input-data-image: &wf-data-image hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest
+wf-input-data-image: &wf-data-image hyperflowwms/montage2-workflow-data:montage2-2mass-3.0-latest
 wf-input-data-from-docker: &input-from-docker true
 
 #################################
