@@ -52,7 +52,7 @@ Resource limits do not need to be specified.
 ### Configure Hyperflow engine
 
 Create `workflow.config.executionModels.json` file in the `/work_dir` directory of the `hyperflow-engine` pod
-with the following content (when running the default workflow, otherwise adjust the task names):
+using the following command (content for the default workflow, otherwise adjust the task names):
 ```
 cat > workflow.config.executionModels.json << EOF
 [
