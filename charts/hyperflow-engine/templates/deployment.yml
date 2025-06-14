@@ -64,9 +64,9 @@ spec:
           - name: HF_VAR_ENABLE_TRACING
             value: "false"
           - name: HF_VAR_ENABLE_OTEL
-            value: "false"
+            value: "1"
           - name: HF_VAR_OPT_URL
-            value: nil
+            value: "http://hf-obs-opentelemetry-collector"
           - name: HF_VAR_function
             # The source of this function can be found here
             # https://github.com/hyperflow-wms/hyperflow/blob/master/functions/kubernetes/k8sCommand.js
