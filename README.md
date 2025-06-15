@@ -264,3 +264,35 @@ echo "127.0.1.1 $HOSTNAME" >> /etc/hosts
 search svc.cluster.local
 options ndots:5 timeout:1
 ```
+
+### RabbitMQ Not Working Due to Cluster DNS – Workaround
+
+If you're running the Hyperflow stack on a Kubernetes cluster with a **custom DNS domain** (i.e., not `svc.cluster.local`), RabbitMQ may fail to start or connect properly due to incorrect hostname resolution.
+
+This typically affects StatefulSets, where RabbitMQ relies on internal DNS to resolve its own node name.
+
+---
+
+#### How to Fix It
+
+1. **Edit the RabbitMQ StatefulSet**:
+
+```bash
+kubectl -n default edit statefulset rabbitmq
+```
+
+2. **Find the following environment variable**:
+
+```yml
+- name: RABBITMQ_NODE_NAME
+  value: rabbit@rabbitmq-0.rabbitmq-headless.default.svc.cluster.local
+```
+
+3. **Replace the domain suffix (svc.cluster.local) with the actual DNS suffix used in your cluster. For example**:
+
+```yaml
+- name: RABBITMQ_NODE_NAME
+  value: rabbit@rabbitmq-0.rabbitmq-headless.default.svc.my-cluster.local
+```
+
+4. **Save the change, and delete the rabbit pod.** 
