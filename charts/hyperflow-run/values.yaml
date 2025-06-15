@@ -31,13 +31,20 @@ workerPools:
   pools: # WorkerPool resources will be created according to this list
     - name: mproject
       taskType: mProject # this has to be equal to task name in workflow.json
-      initialResources: # example overridden setting
-        requests:
-          cpu: "1"
     - name: mdiff
       taskType: mDiffFit
+      initialResources: 
+        requests:
+          cpu: "0.1"
+        limits:
+          cpu: "0.2"
     - name: mbackground
       taskType: mBackground
+      initialResources: 
+        requests:
+          cpu: "0.05"
+        limits:
+          cpu: "0.1"
 
 
 ######################################################
