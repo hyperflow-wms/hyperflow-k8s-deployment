@@ -1,0 +1,43 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hyperflow-rules
+  labels:
+    app: kube-prometheus-stack
+spec:
+  groups:
+    ## Tracks the number of available replicas for deployments with label origin=hyperflow.
+    - name: hyperflow-deployment-metrics
+      interval: 1s
+      rules:
+        - record: hyperflow_deployment_status_replicas_available
+          expr: |
+            kube_deployment_status_replicas_available
+            * on(namespace, deployment) group_left(label_origin)
+            kube_deployment_labels{label_origin="hyperflow"}
+    ## Calculates the percentage of CPU usage per node.
+    - name: node_cpu_usage
+      interval: 5s
+      rules:
+        - record: node_cpu_usage_percent
+          expr: |
+            100 * (
+              sum by (node) (
+                rate(container_cpu_usage_seconds_total{container!=""}[1m])
+              )
+              /
+              sum by (node) (
+                kube_node_status_allocatable{resource="cpu", unit="core"}
+              )
+            )
+    ## Calculates the percentage of memory usage per node.
+    - name: node_memory_usage
+      interval: 5s
+      rules:
+        - record: node_memory_usage_percent
+          expr: |
+            (
+              sum(container_memory_working_set_bytes) by (node)
+              /
+              sum(kube_node_status_allocatable{resource="memory"}) by (node)
+            ) * 100
