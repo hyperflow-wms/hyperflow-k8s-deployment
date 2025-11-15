@@ -3,6 +3,10 @@
 # Fast local testing script for Hyperflow
 # This script sets up a Kind cluster and runs a workflow using locally-built images
 #
+# Usage:
+#   ./local/fast-test.sh           # Use existing cluster/ops if available (default)
+#   ./local/fast-test.sh --clean   # Force clean reinstall from scratch
+#
 # To build HyperFlow engine image before running this script:
 #   cd /path/to/hyperflow && make image
 #
@@ -10,14 +14,43 @@
 
 set -e
 
+# Parse command line arguments
+FORCE_CLEAN=false
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --clean|--from-scratch)
+            FORCE_CLEAN=true
+            shift
+            ;;
+        --help|-h)
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --clean, --from-scratch    Delete and recreate cluster and hf-ops"
+            echo "  --help, -h                 Show this help message"
+            echo ""
+            echo "Environment variables:"
+            echo "  CLUSTER_NAME               Kind cluster name (default: hyperflow-test)"
+            echo "  HF_ENGINE_IMAGE            HyperFlow engine image (default: hyperflowwms/hyperflow:latest)"
+            echo "  WORKER_IMAGE               Worker image (default: hyperflowwms/montage2-worker:latest)"
+            echo "  DATA_IMAGE                 Workflow data image (default: montage2-2mass-025-latest)"
+            echo "  AUTO_RUN                   Auto-start workflow (default: true)"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
 # Configuration
 CLUSTER_NAME="${CLUSTER_NAME:-hyperflow-test}"
 WORKFLOW="${WORKFLOW:-montage2}"
 HF_ENGINE_IMAGE="${HF_ENGINE_IMAGE:-hyperflowwms/hyperflow:latest}"
 WORKER_IMAGE="${WORKER_IMAGE:-hyperflowwms/montage2-worker:latest}"
 DATA_IMAGE="${DATA_IMAGE:-hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest}"
-SKIP_CLUSTER_CREATE="${SKIP_CLUSTER_CREATE:-false}"
-SKIP_OPS_INSTALL="${SKIP_OPS_INSTALL:-false}"
 AUTO_RUN="${AUTO_RUN:-true}"
 
 # Colors for output
@@ -39,15 +72,22 @@ log_error() {
 }
 
 # Step 1: Create or reuse Kind cluster
-if [ "$SKIP_CLUSTER_CREATE" = "false" ]; then
-    log_info "Creating Kind cluster '$CLUSTER_NAME'..."
+if [ "$FORCE_CLEAN" = "true" ]; then
+    # Force clean mode - delete existing cluster
+    log_info "Clean mode: Deleting existing cluster and infrastructure..."
     if kind get clusters | grep -q "^${CLUSTER_NAME}$"; then
-        log_warn "Cluster '$CLUSTER_NAME' already exists. Deleting it..."
         kind delete cluster --name "$CLUSTER_NAME"
     fi
+    log_info "Creating fresh Kind cluster '$CLUSTER_NAME'..."
     kind create cluster --name "$CLUSTER_NAME" --config local/kind-config-3n.yaml
+elif kind get clusters | grep -q "^${CLUSTER_NAME}$"; then
+    # Cluster exists - reuse it
+    log_info "Using existing Kind cluster '$CLUSTER_NAME'"
+    kubectl config use-context "kind-${CLUSTER_NAME}"
 else
-    log_info "Skipping cluster creation (SKIP_CLUSTER_CREATE=true)"
+    # Cluster doesn't exist - create it
+    log_info "Creating Kind cluster '$CLUSTER_NAME'..."
+    kind create cluster --name "$CLUSTER_NAME" --config local/kind-config-3n.yaml
 fi
 
 # Step 2: Load locally-built images into Kind
@@ -76,7 +116,11 @@ else
 fi
 
 # Step 3: Install hyperflow-ops if needed
-if [ "$SKIP_OPS_INSTALL" = "false" ]; then
+if helm list | grep -q "^hf-ops"; then
+    # hf-ops already installed - reuse it
+    log_info "Using existing hf-ops installation"
+else
+    # hf-ops not installed - install it
     log_info "Installing hyperflow-ops chart..."
     log_info "This may take a few minutes (installing RabbitMQ, KEDA, NFS provisioner, etc.)..."
     helm upgrade --install hf-ops charts/hyperflow-ops \
@@ -99,11 +143,17 @@ if [ "$SKIP_OPS_INSTALL" = "false" ]; then
 
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=rabbitmq --timeout=10m 2>/dev/null || log_warn "RabbitMQ pod may still be starting (check: kubectl get pods -A)"
     kubectl wait --for=condition=ready pod -l app=nfs-server-provisioner --timeout=5m 2>/dev/null || log_warn "NFS provisioner pod may still be starting"
-else
-    log_info "Skipping hyperflow-ops installation (SKIP_OPS_INSTALL=true)"
 fi
 
-# Step 4: Install hyperflow-run chart
+# Step 4: Delete old workflow run and install new one
+if helm list | grep -q "^hf-run"; then
+    log_info "Deleting previous workflow run..."
+    helm delete hf-run
+    log_info "Waiting for previous workflow pods to terminate..."
+    kubectl wait --for=delete pod -l component=hyperflow-engine --timeout=60s 2>/dev/null || true
+    sleep 2
+fi
+
 log_info "Installing hyperflow-run chart for workflow '$WORKFLOW'..."
 helm upgrade --install hf-run charts/hyperflow-run \
     --dependency-update \

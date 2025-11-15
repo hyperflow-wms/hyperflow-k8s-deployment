@@ -51,6 +51,7 @@ kubectl wait --for=delete pod -l component=hyperflow-engine --timeout=60s 2>/dev
 
 # Step 4: Run fast test with locally built image
 log_info "Running fast test with newly built image..."
-SKIP_CLUSTER_CREATE=true SKIP_OPS_INSTALL=true HF_ENGINE_IMAGE="$HF_ENGINE_IMAGE" ./local/fast-test.sh
+# Note: fast-test.sh will automatically reuse existing cluster and hf-ops
+HF_ENGINE_IMAGE="$HF_ENGINE_IMAGE" ./local/fast-test.sh
 
 log_info "Done!"

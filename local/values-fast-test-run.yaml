@@ -1,6 +1,9 @@
 # Fast local testing values for hyperflow-run
 # Optimized for quick testing with locally-built images
 
+# Note: hf-engine-image and wf-worker-image are overridden by --set flags in fast-test.sh
+# These are just defaults if the script is not used
+
 # Use small workflow data by default
 wf-input-data-image: &wf-data-image hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest
 wf-input-data-from-docker: &input-from-docker true
@@ -78,10 +81,30 @@ hyperflow-engine:
       cpu: 500m
       memory: 512Mi
 
+  # Add init container to wait for nfs-data job to complete
+  initContainers:
+    enabled: true
+    waitForData:
+      enabled: true
+      image: bitnami/kubectl:latest
+      imagePullPolicy: IfNotPresent
+      command:
+        - sh
+        - -c
+        - |
+          echo "Waiting for nfs-data job to complete..."
+          kubectl wait --for=condition=complete --timeout=300s job/nfs-data || {
+            echo "nfs-data job did not complete in time, checking status..."
+            kubectl get job nfs-data
+            kubectl logs job/nfs-data
+            exit 1
+          }
+          echo "nfs-data job completed! Workflow data is ready."
+
   containers:
     hyperflow:
-      # Image will be overridden by --set flag in script
-      imagePullPolicy: IfNotPresent  # Use local image if available
+      # Image will be overridden by --set hf-engine-image flag in script
+      imagePullPolicy: IfNotPresent  # CRITICAL: Use local image loaded into Kind
       runAsServer: false
       autoRun: true  # Auto-start workflow
       command:

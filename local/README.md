@@ -18,6 +18,8 @@ Fast local testing of HyperFlow workflows using Kind (Kubernetes in Docker) with
 
 This creates a Kind cluster with 3 worker nodes, installs all necessary components (RabbitMQ, KEDA, NFS, etc.), and runs a small Montage2 workflow automatically.
 
+**Smart defaults:** The script automatically reuses existing cluster and infrastructure on subsequent runs for maximum speed. Use `./local/fast-test.sh --clean` to force a fresh reinstall.
+
 ### Iterative Development (Most Common)
 
 When you modify HyperFlow engine code:
@@ -58,13 +60,16 @@ CLUSTER_NAME=hyperflow-test          # Kind cluster name
 
 ### fast-test.sh
 ```bash
+# Command line options
+./local/fast-test.sh           # Use existing cluster/ops (default)
+./local/fast-test.sh --clean   # Force fresh reinstall from scratch
+
+# Environment variables
 CLUSTER_NAME=hyperflow-test          # Kind cluster name
 HF_ENGINE_IMAGE=...                  # HyperFlow engine image
 WORKER_IMAGE=...                     # Worker image
 DATA_IMAGE=...                       # Workflow data image
-SKIP_CLUSTER_CREATE=true/false       # Reuse existing cluster
-SKIP_OPS_INSTALL=true/false          # Reuse existing infrastructure
-AUTO_RUN=true/false                  # Auto-start workflow
+AUTO_RUN=true/false                  # Auto-start workflow (default: true)
 ```
 
 ## 💡 Common Scenarios
@@ -94,7 +99,6 @@ DATA_IMAGE=matplinta/montage-workflow-data:degree0.25 \
 
 # Large workflow (~16k jobs)
 DATA_IMAGE=hyperflowwms/montage2-workflow-data:montage2-2mass-3.0-latest \
-SKIP_CLUSTER_CREATE=true SKIP_OPS_INSTALL=true \
 ./local/fast-test.sh
 ```
 
@@ -106,17 +110,15 @@ cd /path/to/worker && docker build -t my-worker:test .
 # Load into Kind
 kind load docker-image my-worker:test --name hyperflow-test
 
-# Test it
+# Test it (automatically reuses existing cluster/ops)
 cd /path/to/hyperflow-k8s-deployment
-WORKER_IMAGE=my-worker:test \
-SKIP_CLUSTER_CREATE=true SKIP_OPS_INSTALL=true \
-./local/fast-test.sh
+WORKER_IMAGE=my-worker:test ./local/fast-test.sh
 ```
 
-### Reuse Existing Cluster & Infrastructure
+### Force Clean Reinstall
 ```bash
-# Skip cluster creation and ops installation (fastest)
-SKIP_CLUSTER_CREATE=true SKIP_OPS_INSTALL=true ./local/fast-test.sh
+# Delete and recreate everything from scratch
+./local/fast-test.sh --clean
 ```
 
 ### Manual Testing (No Auto-Run)
