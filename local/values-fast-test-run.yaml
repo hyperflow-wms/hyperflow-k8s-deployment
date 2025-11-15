@@ -1,0 +1,198 @@
+# Fast local testing values for hyperflow-run
+# Optimized for quick testing with locally-built images
+
+# Use small workflow data by default
+wf-input-data-image: &wf-data-image hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest
+wf-input-data-from-docker: &input-from-docker true
+
+#################################
+####   Define worker pools   ####
+#################################
+workerPools:
+  enabled: &wfpoolsenabled true
+  workerPoolDefaults:
+    rabbitHostname: &rabbithostname rabbitmq.default
+    redisUrl: redis://redis:6379
+    minReplicaCount: 0
+    maxReplicaCount: 10  # Reduced for local testing
+    initialResources:
+      requests:
+        cpu: "0.2"  # Reduced for local testing
+        memory: "128Mi"  # Reduced for local testing
+      limits:
+        cpu: "0.5"
+        memory: "256Mi"
+  pools:
+    - name: mproject
+      taskType: mProject
+    - name: mdiff
+      taskType: mDiffFit
+    - name: mbackground
+      taskType: mBackground
+
+######################################################
+####   Get workflow input data from docker image  ####
+######################################################
+hyperflow-nfs-data:
+  enabled: *input-from-docker
+  workflow:
+    image: *wf-data-image
+  nodeSelector:
+    hyperflow-wms/nodepool: hfmaster
+  volumeMounts:
+    - mountPath: /workflow-data
+      name: workflow-data
+  # Force local image usage
+  imagePullPolicy: IfNotPresent
+
+#####################
+####    Redis    ####
+#####################
+redis:
+  nodeSelector:
+    hyperflow-wms/nodepool: hfmaster
+  # Reduce resources for local testing
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+############################
+####  Hyperflow Engine  ####
+############################
+hyperflow-engine:
+  workerPools:
+    enabled: *wfpoolsenabled
+    workerPoolDefaults:
+      rabbitHostname: *rabbithostname
+
+  # Reduce resources for local testing
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  containers:
+    hyperflow:
+      # Image will be overridden by --set flag in script
+      imagePullPolicy: IfNotPresent  # Use local image if available
+      runAsServer: false
+      autoRun: true  # Auto-start workflow
+      command:
+        - "/bin/sh"
+        - "-c"
+        - >
+          echo "Starting HyperFlow workflow..." ;
+          cd /work_dir ;
+          hflow run workflow.json ;
+          echo "Workflow finished." ;
+          if [ "$(ls -A /work_dir/logs-hf)" ]; then
+            echo 1 > /work_dir/postprocStart ;
+          else
+            echo "Warning: Hyperflow logs not collected." ;
+          fi ;
+          echo "Container will stay alive for 1 hour for debugging..." ;
+          sleep 3600 ;
+    worker:
+      # Image will be overridden by --set flag in script
+      imagePullPolicy: IfNotPresent  # Use local image if available
+      additionalVariables:
+        - name: HF_VAR_DEBUG
+          value: "0"  # Enable workflow execution
+        - name: HF_VAR_CPU_REQUEST
+          value: "0.2"
+        - name: HF_VAR_MEM_REQUEST
+          value: "128Mi"
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=512"
+    tools:
+      image: hyperflowwms/hflow-tools:v1.3.1
+      imagePullPolicy: IfNotPresent
+
+  nodeSelector:
+    hyperflow-wms/nodepool: hfmaster
+
+  configMap:
+    data:
+      job-template.yaml: |-
+            apiVersion: batch/v1
+            kind: Job
+            metadata:
+              name: job${jobName}
+            spec:
+              ttlSecondsAfterFinished: 60  # Cleanup faster in local tests
+              template:
+                metadata:
+                  labels:
+                    app: hyperflow
+                spec:
+                  restartPolicy: Never
+                  containers:
+                  - name: test
+                    image: ${containerName}
+                    imagePullPolicy: IfNotPresent
+                    env:
+                      - name: HF_VAR_WORK_DIR
+                        value: "${workingDirPath}"
+                      - name: HF_VAR_WAIT_FOR_INPUT_FILES
+                        value: "0"
+                      - name: HF_VAR_NUM_RETRIES
+                        value: "1"
+                      - name: HF_VAR_ENABLE_TRACING
+                        value: "${enableTracing}"
+                      - name: HF_VAR_ENABLE_OTEL
+                        value: "${enableOtel}"
+                      - name: HF_VAR_OT_PARENT_ID
+                        value: "${optParentId}"
+                      - name: HF_VAR_OT_TRACE_ID
+                        value: "${optTraceId}"
+                      - name: HF_LOG_NODE_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: spec.nodeName
+                      - name: HF_LOG_POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: HF_LOG_POD_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.namespace
+                      - name: HF_LOG_POD_IP
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: status.podIP
+                      - name: HF_LOG_POD_SERVICE_ACCOUNT
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: spec.serviceAccountName
+                      - name: HF_VAR_FS_MONIT_ENABLED
+                        value: "0"
+                    command:
+                      - "/bin/sh"
+                      - "-c"
+                      - >
+                        ${command}; exitCode=$? ;
+                        if [ $exitCode -ne 0 ]; then echo "Command ${command} failed with exit code $exitCode" ; exit 1 ; fi ;
+                    workingDir: ${workingDirPath}
+                    resources:
+                      requests:
+                        cpu: ${cpuRequest}
+                        memory: ${memRequest}
+                    volumeMounts:
+                    - name: my-pvc-nfs
+                      mountPath: ${volumePath}
+                  nodeSelector:
+                    hyperflow-wms/nodepool: hfworker
+                  volumes:
+                  - name: workflow-data
+                    emptyDir: {}
+                  - name: my-pvc-nfs
+                    persistentVolumeClaim:
+                      claimName: nfs

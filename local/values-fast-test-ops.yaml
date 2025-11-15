@@ -1,0 +1,60 @@
+# Fast local testing values for hyperflow-ops
+# Optimized for quick startup and minimal resource usage
+
+worker-pools:
+  enabled: true
+  enable-prometheus-adapter: false  # Disable for faster startup
+  enable-prometheus-rabbitmq-exporter: false
+  enable-keda: true
+  enable-rabbitmq: true
+  enable-kube-prometheus-stack: false  # Disable heavy monitoring for local tests
+  enable-alert-manager: false
+  enable-grafana: false
+  enable-prometheus-operator: false
+  enable-prometheus: false
+
+nfs-server-provisioner:
+  nodeSelector:
+    hyperflow-wms/nodepool: hfmaster
+  persistence:
+    enabled: false  # Use emptyDir for faster local testing
+    size: 10Gi  # Smaller size for local tests
+
+hyperflow-worker-pool-operator:
+  nodeSelector:
+    hyperflow-wms/nodepool: hfmaster
+
+  keda:
+    enabled: true
+    nodeSelector:
+      hyperflow-wms/nodepool: hfmaster
+
+  rabbitmq:
+    enabled: true
+    nodeSelector:
+      hyperflow-wms/nodepool: hfmaster
+    auth:
+      username: guest
+      password: guest
+      erlangCookie: jiwng4pw7NJL3KutMb4pF7k6C5RphXYU
+    # Use Bitnami Legacy repository (new location after Aug 28, 2025)
+    image:
+      repository: bitnamilegacy/rabbitmq
+      tag: 4.0.5-debian-12-r2
+    # required when not using Bitnami “standard” images
+    global:
+      security:
+        allowInsecureImages: true   
+    volumePermissions:
+      enabled: true
+      image:
+        repository: bitnamilegacy/os-shell
+    # Reduce resources for local testing
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
