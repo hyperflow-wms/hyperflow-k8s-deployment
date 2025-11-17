@@ -81,25 +81,30 @@ hyperflow-engine:
       cpu: 500m
       memory: 512Mi
 
-  # Add init container to wait for nfs-data job to complete
+  # Add init container to wait for nfs-data job to complete AND verify files are synced
+  # NOTE: Template only supports dataInjector and dataPreprocess init containers
   initContainers:
     enabled: true
-    waitForData:
+    dataPreprocess:
       enabled: true
-      image: bitnami/kubectl:latest
-      imagePullPolicy: IfNotPresent
+      image: busybox
       command:
         - sh
         - -c
         - |
-          echo "Waiting for nfs-data job to complete..."
-          kubectl wait --for=condition=complete --timeout=300s job/nfs-data || {
-            echo "nfs-data job did not complete in time, checking status..."
-            kubectl get job nfs-data
-            kubectl logs job/nfs-data
-            exit 1
-          }
-          echo "nfs-data job completed! Workflow data is ready."
+          echo "Waiting for workflow.json to be accessible on NFS volume..."
+          # Wait for NFS writes to be fully synced after nfs-data job completes
+          sleep 3
+          until [ -f /work_dir/workflow.json ]; do
+            echo "workflow.json not yet visible, waiting for NFS sync..."
+            sleep 2
+          done
+          # Extra safety delay to ensure all files are synced
+          sleep 2
+          echo "workflow.json confirmed! NFS data is ready."
+      volumeMounts:
+        - name: workflow-data
+          mountPath: /work_dir
 
   containers:
     hyperflow:
@@ -197,6 +202,8 @@ hyperflow-engine:
                             fieldPath: spec.serviceAccountName
                       - name: HF_VAR_FS_MONIT_ENABLED
                         value: "0"
+                      - name: HF_VAR_DRY_RUN
+                        value: "${dryRun}"
                     command:
                       - "/bin/sh"
                       - "-c"

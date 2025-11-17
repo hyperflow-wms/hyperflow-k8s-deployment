@@ -16,10 +16,15 @@ set -e
 
 # Parse command line arguments
 FORCE_CLEAN=false
+DRY_RUN=false
 while [[ $# -gt 0 ]]; do
     case $1 in
         --clean|--from-scratch)
             FORCE_CLEAN=true
+            shift
+            ;;
+        --dry-run)
+            DRY_RUN=true
             shift
             ;;
         --help|-h)
@@ -27,6 +32,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  --clean, --from-scratch    Delete and recreate cluster and hf-ops"
+            echo "  --dry-run                  Enable dry run mode (jobs return immediately with success)"
             echo "  --help, -h                 Show this help message"
             echo ""
             echo "Environment variables:"
@@ -35,6 +41,7 @@ while [[ $# -gt 0 ]]; do
             echo "  WORKER_IMAGE               Worker image (default: hyperflowwms/montage2-worker:latest)"
             echo "  DATA_IMAGE                 Workflow data image (default: montage2-2mass-025-latest)"
             echo "  AUTO_RUN                   Auto-start workflow (default: true)"
+            echo "  DRY_RUN                    Enable dry run mode (default: false)"
             exit 0
             ;;
         *)
@@ -52,6 +59,7 @@ HF_ENGINE_IMAGE="${HF_ENGINE_IMAGE:-hyperflowwms/hyperflow:latest}"
 WORKER_IMAGE="${WORKER_IMAGE:-hyperflowwms/montage2-worker:latest}"
 DATA_IMAGE="${DATA_IMAGE:-hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest}"
 AUTO_RUN="${AUTO_RUN:-true}"
+DRY_RUN="${DRY_RUN:-false}"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -155,12 +163,17 @@ if helm list | grep -q "^hf-run"; then
 fi
 
 log_info "Installing hyperflow-run chart for workflow '$WORKFLOW'..."
+if [ "$DRY_RUN" = "true" ]; then
+    log_info "DRY RUN MODE ENABLED - Jobs will return immediately with success"
+fi
 helm upgrade --install hf-run charts/hyperflow-run \
     --dependency-update \
     --set hf-engine-image="$HF_ENGINE_IMAGE" \
     --set wf-worker-image="$WORKER_IMAGE" \
     --set wf-input-data-image="$DATA_IMAGE" \
     --set hyperflow-engine.containers.hyperflow.autoRun="$AUTO_RUN" \
+    --set hyperflow-engine.containers.hyperflow.additionalVariables[0].name="HF_VAR_DRY_RUN" \
+    --set-string hyperflow-engine.containers.hyperflow.additionalVariables[0].value="$([ "$DRY_RUN" = "true" ] && echo "1" || echo "0")" \
     --wait \
     --timeout 10m \
     -f local/values-fast-test-run.yaml

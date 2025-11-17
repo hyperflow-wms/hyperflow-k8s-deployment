@@ -203,6 +203,8 @@ hyperflow-engine:
                         value: '${command}'
                       - name: HF_VAR_FS_MONIT_PATH_PATTERN
                         value: "${workingDirPath}/*"
+                      - name: HF_VAR_DRY_RUN
+                        value: "${dryRun}"
                     command:
                       - "/bin/sh"
                       - "-c"
