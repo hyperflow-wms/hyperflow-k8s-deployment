@@ -202,8 +202,8 @@ hyperflow-engine:
                             fieldPath: spec.serviceAccountName
                       - name: HF_VAR_FS_MONIT_ENABLED
                         value: "0"
-                      - name: HF_VAR_DRY_RUN
-                        value: "${dryRun}"
+                      # NOTE: HF_VAR_DRY_RUN is NOT included by default
+                      # For dry-run mode, use --dry-run flag which injects it via the script
                     command:
                       - "/bin/sh"
                       - "-c"

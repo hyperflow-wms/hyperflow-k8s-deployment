@@ -164,19 +164,18 @@ fi
 
 log_info "Installing hyperflow-run chart for workflow '$WORKFLOW'..."
 if [ "$DRY_RUN" = "true" ]; then
-    log_info "DRY RUN MODE ENABLED - Jobs will return immediately with success"
+    log_warn "DRY RUN MODE is not yet fully implemented (requires executor fix)"
+    log_warn "Jobs will run normally. To enable dry run, update hyperflow-job-executor to check HF_VAR_DRY_RUN === '1'"
 fi
 helm upgrade --install hf-run charts/hyperflow-run \
     --dependency-update \
+    -f local/values-fast-test-run.yaml \
     --set hf-engine-image="$HF_ENGINE_IMAGE" \
     --set wf-worker-image="$WORKER_IMAGE" \
     --set wf-input-data-image="$DATA_IMAGE" \
     --set hyperflow-engine.containers.hyperflow.autoRun="$AUTO_RUN" \
-    --set hyperflow-engine.containers.hyperflow.additionalVariables[0].name="HF_VAR_DRY_RUN" \
-    --set-string hyperflow-engine.containers.hyperflow.additionalVariables[0].value="$([ "$DRY_RUN" = "true" ] && echo "1" || echo "0")" \
     --wait \
-    --timeout 10m \
-    -f local/values-fast-test-run.yaml
+    --timeout 10m
 
 # Step 5: Monitor workflow execution
 if [ "$AUTO_RUN" = "true" ]; then
