@@ -4,8 +4,9 @@
 # This script sets up a Kind cluster and runs a workflow using locally-built images
 #
 # Usage:
-#   ./local/fast-test.sh           # Use existing cluster/ops if available (default)
-#   ./local/fast-test.sh --clean   # Force clean reinstall from scratch
+#   ./local/fast-test.sh                        # Use existing cluster/ops if available (default)
+#   ./local/fast-test.sh --clean                # Force clean reinstall from scratch
+#   ./local/fast-test.sh --admission-controller # Enable K8s admission controller with debug
 #
 # To build HyperFlow engine image before running this script:
 #   cd /path/to/hyperflow && make image
@@ -17,6 +18,7 @@ set -e
 # Parse command line arguments
 FORCE_CLEAN=false
 DRY_RUN=false
+ADMISSION_CONTROLLER=false
 while [[ $# -gt 0 ]]; do
     case $1 in
         --clean|--from-scratch)
@@ -27,12 +29,17 @@ while [[ $# -gt 0 ]]; do
             DRY_RUN=true
             shift
             ;;
+        --admission-controller)
+            ADMISSION_CONTROLLER=true
+            shift
+            ;;
         --help|-h)
             echo "Usage: $0 [OPTIONS]"
             echo ""
             echo "Options:"
             echo "  --clean, --from-scratch    Delete and recreate cluster and hf-ops"
             echo "  --dry-run                  Enable dry run mode (jobs return immediately with success)"
+            echo "  --admission-controller     Enable K8s admission controller with 3-node cluster settings"
             echo "  --help, -h                 Show this help message"
             echo ""
             echo "Environment variables:"
@@ -167,15 +174,61 @@ if [ "$DRY_RUN" = "true" ]; then
     log_warn "DRY RUN MODE is not yet fully implemented (requires executor fix)"
     log_warn "Jobs will run normally. To enable dry run, update hyperflow-job-executor to check HF_VAR_DRY_RUN === '1'"
 fi
+
+# Build admission controller config if enabled
+ADMISSION_VALUES_FILE=""
+if [ "$ADMISSION_CONTROLLER" = "true" ]; then
+    log_info "Enabling K8s admission controller with 3-node cluster settings..."
+
+    # Create temporary values file with admission controller settings
+    ADMISSION_VALUES_FILE=$(mktemp)
+    cat > "$ADMISSION_VALUES_FILE" <<EOF
+hyperflow-engine:
+  containers:
+    worker:
+      additionalVariables:
+        - name: HF_VAR_DEBUG
+          value: "0"
+        - name: HF_VAR_CPU_REQUEST
+          value: "0.2"
+        - name: HF_VAR_MEM_REQUEST
+          value: "128Mi"
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=512"
+        - name: HF_VAR_ADMISSION_CONTROLLER
+          value: "1"
+        - name: HF_VAR_ADMISSION_PENDING_MAX
+          value: "120"
+        - name: HF_VAR_ADMISSION_FILL_RATE
+          value: "15"
+        - name: HF_VAR_ADMISSION_BURST
+          value: "80"
+        - name: HF_VAR_ADMISSION_ADAPTIVE
+          value: "1"
+        - name: HF_VAR_ADMISSION_DEBUG
+          value: "1"
+EOF
+
+    ADMISSION_FLAGS="-f $ADMISSION_VALUES_FILE"
+else
+    ADMISSION_FLAGS=""
+fi
+
 helm upgrade --install hf-run charts/hyperflow-run \
     --dependency-update \
     -f local/values-fast-test-run.yaml \
-    --set hf-engine-image="$HF_ENGINE_IMAGE" \
-    --set wf-worker-image="$WORKER_IMAGE" \
+    --set hyperflow-engine.containers.hyperflow.image="$HF_ENGINE_IMAGE" \
+    --set hyperflow-engine.containers.worker.image="$WORKER_IMAGE" \
     --set wf-input-data-image="$DATA_IMAGE" \
     --set hyperflow-engine.containers.hyperflow.autoRun="$AUTO_RUN" \
+    $ADMISSION_FLAGS \
     --wait \
     --timeout 10m
+
+# Clean up temporary admission controller values file
+if [ -n "$ADMISSION_VALUES_FILE" ] && [ -f "$ADMISSION_VALUES_FILE" ]; then
+    rm -f "$ADMISSION_VALUES_FILE"
+fi
 
 # Step 5: Monitor workflow execution
 if [ "$AUTO_RUN" = "true" ]; then

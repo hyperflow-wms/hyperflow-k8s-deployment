@@ -2,8 +2,32 @@
 
 # Convenience script to rebuild Hyperflow engine and test it locally
 # This script assumes you have the hyperflow source code in a sibling directory
+#
+# Usage:
+#   ./local/rebuild-and-test.sh                    # Standard rebuild and test
+#   ./local/rebuild-and-test.sh --admission-controller  # Test with admission controller enabled
 
 set -e
+
+# Parse command line arguments
+EXTRA_ARGS=""
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --admission-controller)
+            EXTRA_ARGS="$EXTRA_ARGS --admission-controller"
+            shift
+            ;;
+        --clean|--from-scratch)
+            EXTRA_ARGS="$EXTRA_ARGS --clean"
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: $0 [--admission-controller] [--clean]"
+            exit 1
+            ;;
+    esac
+done
 
 # Configuration
 HYPERFLOW_DIR="${HYPERFLOW_DIR:-../hyperflow}"
@@ -49,9 +73,13 @@ helm delete hf-run 2>/dev/null || log_info "No existing hf-run release to delete
 log_info "Waiting for pods to terminate..."
 kubectl wait --for=delete pod -l component=hyperflow-engine --timeout=60s 2>/dev/null || true
 
-# Step 4: Run fast test with locally built image
+# Step 4: Load image into Kind cluster
+log_info "Loading image into Kind cluster..."
+kind load docker-image "$HF_ENGINE_IMAGE" --name "$CLUSTER_NAME"
+
+# Step 5: Run fast test with newly built image
 log_info "Running fast test with newly built image..."
 # Note: fast-test.sh will automatically reuse existing cluster and hf-ops
-HF_ENGINE_IMAGE="$HF_ENGINE_IMAGE" ./local/fast-test.sh
+HF_ENGINE_IMAGE="$HF_ENGINE_IMAGE" ./local/fast-test.sh $EXTRA_ARGS
 
 log_info "Done!"
