@@ -12,17 +12,10 @@ If multiple worker pools run simultaneously, they will scale within the availabl
 
 ## Running a sample workflow
 
-### [Optional] Create workerpools namespace
+### Create workerpools namespace
 
 ```
 kubectl create namespace workerpools
-```
-
-### Clone repositories with Helm charts
-
-```
-git clone https://github.com/hyperflow-wms/hyperflow-k8s-deployment
-git clone https://github.com/hyperflow-wms/hyperflow-worker-pool-operator
 ```
 
 ### Install Helm charts
@@ -33,8 +26,8 @@ values to run a small Montage workflow. Make sure the `workerPools.enabled` flag
 Install the charts as follows (use `--namespace <namespace>` if using specific namespace):
 ```
 cd hyperflow-k8s-deployment/charts
-helm upgrade --dependency-update -i hf-ops hyperflow-ops
-helm upgrade --dependency-update -i hf-run-montage hyperflow-run
+helm upgrade --dependency-update -n workerpools -i hf-ops hyperflow-ops
+helm upgrade --dependency-update -n workerpools -i hf-run-montage hyperflow-run
 ```
 
 ### Create ResourceQuota
@@ -43,8 +36,9 @@ The implementation of the Worker Pools Operator requires `ResourceQuota` object 
 in the namespace where workflows are executed. Such an object is used in PrometheusRules to
 obtain the maximum amount of resources designated to processing a workflow. Currently this step is done manually. A sample `ResourceQuota` manifest is placed in [resourcequota.yml](resourcequota.yml) file. To create this resource, execute the following command Assuming you are in repository main directory):
 ```
-kubectl create --namespace <namespace> -f examples/workerpools/resourcequota.yml
+kubectl create -n workerpools quota hflow-requests --hard=requests.cpu=21,requests.memory=60Gi
 ```
+
 The `ResourceQuota` object should be adjusted to the total allocatable resources in the worker nodes used to
 run workflow tasks (labelled `hyperflow-wms/nodepool: hfworker`). 
 Resource limits do not need to be specified. 
@@ -54,7 +48,7 @@ Resource limits do not need to be specified.
 Create `workflow.config.executionModels.json` file in the `/work_dir` directory of the `hyperflow-engine` pod
 using the following command (content for the default workflow, otherwise adjust the task names):
 ```
-cat > workflow.config.executionModels.json << EOF
+kubectl exec -n workerpools -it deployment/hyperflow-engine -- sh -c 'cat > /work_dir/workflow.config.executionModels.json' <<EOF
 [
   {
     "name": "mProject"
@@ -72,10 +66,7 @@ EOF
 ### Execute the workflow
 The workflow needs to be started manually in the Hyperflow engine Pod:
 ```bash
-kubectl exec -it <hyperflow-engine-pod> -- sh
-
-cd /work_dir`
-hflow run .
+kubectl exec -n workerpools -it deployment/hyperflow-engine -- sh -c 'hflow run /work_dir'
 ```
 
 ### Cleanup - important
