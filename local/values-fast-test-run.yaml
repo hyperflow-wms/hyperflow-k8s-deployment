@@ -1,11 +1,12 @@
 # Fast local testing values for hyperflow-run
 # Optimized for quick testing with locally-built images
 
-# Note: hf-engine-image and wf-worker-image are overridden by --set flags in fast-test.sh
-# These are just defaults if the script is not used
+# Note: Images are set via --set flags in fast-test.sh script
+# The script reads HF_ENGINE_IMAGE, WORKER_IMAGE, and DATA_IMAGE env vars
 
 # Use small workflow data by default
-wf-input-data-image: &wf-data-image hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest
+# wf-input-data-image: &wf-data-image hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest
+wf-input-data-image: &wf-data-image matplinta/montage-workflow-data:degree0.25
 wf-input-data-from-docker: &input-from-docker true
 
 #################################
@@ -108,7 +109,7 @@ hyperflow-engine:
 
   containers:
     hyperflow:
-      # Image will be overridden by --set hf-engine-image flag in script
+      # Image is set via --set hyperflow-engine.containers.hyperflow.image flag in fast-test.sh
       imagePullPolicy: IfNotPresent  # CRITICAL: Use local image loaded into Kind
       runAsServer: false
       autoRun: true  # Auto-start workflow
@@ -128,7 +129,7 @@ hyperflow-engine:
           echo "Container will stay alive for 1 hour for debugging..." ;
           sleep 3600 ;
     worker:
-      # Image will be overridden by --set flag in script
+      # Image is set via --set hyperflow-engine.containers.worker.image flag in fast-test.sh
       imagePullPolicy: IfNotPresent  # Use local image if available
       additionalVariables:
         - name: HF_VAR_DEBUG
