@@ -5,8 +5,7 @@
 # The script reads HF_ENGINE_IMAGE, WORKER_IMAGE, and DATA_IMAGE env vars
 
 # Use small workflow data by default
-# wf-input-data-image: &wf-data-image hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest
-wf-input-data-image: &wf-data-image matplinta/montage-workflow-data:degree0.25
+wf-input-data-image: &wf-data-image hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest
 wf-input-data-from-docker: &input-from-docker true
 
 #################################
@@ -73,14 +72,14 @@ hyperflow-engine:
     workerPoolDefaults:
       rabbitHostname: *rabbithostname
 
-  # Reduce resources for local testing
+  # Resources for hyperflow-engine pod (increased for large workflows)
   resources:
     requests:
       cpu: 100m
-      memory: 256Mi
+      memory: 1Gi
     limits:
       cpu: 500m
-      memory: 512Mi
+      memory: 2Gi
 
   # Add init container to wait for nfs-data job to complete AND verify files are synced
   # NOTE: Template only supports dataInjector and dataPreprocess init containers
@@ -113,6 +112,9 @@ hyperflow-engine:
       imagePullPolicy: IfNotPresent  # CRITICAL: Use local image loaded into Kind
       runAsServer: false
       autoRun: true  # Auto-start workflow
+      additionalVariables:
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=1536"  # 1.5GB heap (~75% of 2GB container limit)
       command:
         - "/bin/sh"
         - "-c"
@@ -138,8 +140,6 @@ hyperflow-engine:
           value: "0.2"
         - name: HF_VAR_MEM_REQUEST
           value: "128Mi"
-        - name: NODE_OPTIONS
-          value: "--max-old-space-size=512"
     tools:
       image: hyperflowwms/hflow-tools:v1.3.1
       imagePullPolicy: IfNotPresent

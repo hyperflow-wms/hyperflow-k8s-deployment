@@ -219,7 +219,7 @@ helm upgrade --install hf-run charts/hyperflow-run \
     -f local/values-fast-test-run.yaml \
     --set hyperflow-engine.containers.hyperflow.image="$HF_ENGINE_IMAGE" \
     --set hyperflow-engine.containers.worker.image="$WORKER_IMAGE" \
-    --set wf-input-data-image="$DATA_IMAGE" \
+    --set hyperflow-nfs-data.workflow.image="$DATA_IMAGE" \
     --set hyperflow-engine.containers.hyperflow.autoRun="$AUTO_RUN" \
     $ADMISSION_FLAGS \
     --wait \
