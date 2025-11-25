@@ -2,10 +2,10 @@ hf-pod-name() {
   kubectl get pods -lcomponent=hyperflow-engine -o jsonpath='{.items..metadata.name}'
 }
 hf-exec() {
-  kubectl exec -it $(hf-pod-name) -c hyperflow sh 
+  kubectl exec -it $(hf-pod-name) -c hyperflow -- sh 
 }
 hf-tools-exec() {
-  kubectl exec -it $(hf-pod-name) -c hflow-tools bash
+  kubectl exec -it $(hf-pod-name) -c hflow-tools -- bash
 }
 hf-logs() {
   kubectl logs $(hf-pod-name) -c hyperflow -f 
