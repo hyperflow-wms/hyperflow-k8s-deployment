@@ -18,6 +18,14 @@ Fast local testing of HyperFlow workflows using Kind (Kubernetes in Docker) with
 
 This creates a Kind cluster with 3 worker nodes, installs all necessary components (RabbitMQ, KEDA, NFS, etc.), and runs a small Montage2 workflow automatically.
 
+To run a different workflow, override settings using envs, e.g.:
+```bash
+WORKFLOW=montage-tiny \
+  WORKER_IMAGE=hyperflowwms/montage-worker:latest \
+  DATA_IMAGE=matplinta/montage-workflow-data:degree0.25 \
+  ./local/fast-test.sh
+```
+
 **Smart defaults:** The script automatically reuses existing cluster and infrastructure on subsequent runs for maximum speed. Use `./local/fast-test.sh --clean` to force a fresh reinstall.
 
 ### Iterative Development (Most Common)
