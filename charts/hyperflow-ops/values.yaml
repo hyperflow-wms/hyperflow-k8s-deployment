@@ -6,7 +6,7 @@ worker-pools:
   enable-rabbitmq: &enable-rabbit-mq true
   enable-kube-prometheus-stack: &enable-kube-prometheus-stack true
   enable-alert-manager: &enable-alert-manager false
-  enable-grafana: &enable-grafana true
+  enable-grafana: &enable-grafana false
   enable-prometheus-operator: &enable-prometheus-operator true
   enable-prometheus: &enable-prometheus true
 
