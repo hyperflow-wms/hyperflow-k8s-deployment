@@ -137,12 +137,5 @@ spec:
       nodeSelector: {{ . | toYaml | nindent 10 }}
       {{- end }}
       {{- with .Values.volumes }}
-      volumes: {{ . | toYaml | nindent 10 }}
+      volumes: {{ . | toYaml | nindent 8 }}
       {{- end }}
-      volumes:
-      - name: config-map
-        configMap:
-          name: hyperflow-config
-      - name: workflow-data
-        persistentVolumeClaim:
-          claimName: nfs

@@ -28,29 +28,11 @@ kubectl create -n hyperflow quota hflow-requests --hard=requests.cpu=21,requests
 ### Wait until all pods in workflow namespace are in running state
 
 ```bash
-kubectl wait -n hyperflow --for=condition=available --timeout=300s deployment --all
+kubectl wait -n hyperflow --for=condition=available --timeout=1200s deployment --all
 ```
 
-### Configure Hyperflow engine and begin workflow calculation
+### Begin sample workflow calculation
 
-Create `workflow.config.executionModels.json` file in the `/work_dir` directory of the `hyperflow-engine` pod
-using the following command (content for the default workflow, otherwise adjust the task names):
-
-```bash
-kubectl exec -n hyperflow -it deployment/hyperflow-engine -- sh -c 'cat > /work_dir/workflow.config.executionModels.json' <<EOF
-[
-  {
-    "name": "mProject"
-  },
-  {
-    "name": "mDiffFit"
-  },
-  {
-    "name": "mBackground"
-  }
-]
-EOF
-```
 
 ```bash
 kubectl exec -n hyperflow -it deployment/hyperflow-engine -- sh -c 'hflow run /work_dir'
