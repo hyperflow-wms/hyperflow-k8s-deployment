@@ -66,6 +66,17 @@ redis:
 ####  Hyperflow Engine  ####
 ############################
 hyperflow-engine:
+  volumes:
+    - name: config-map
+      configMap:
+        name: hyperflow-config
+    - name: workflow-data
+      persistentVolumeClaim:
+        claimName: nfs
+    - name: worker-config
+      configMap:
+        name: worker-config
+
   workerPools:
     enabled: *wfpoolsenabled
     workerPoolDefaults:
@@ -105,6 +116,17 @@ hyperflow-engine:
           else
             while true; do sleep 5 ; done ;
           fi ;
+      volumeMounts:
+      - name: workflow-data
+        mountPath: "/work_dir"
+      - name: config-map
+        mountPath: /opt/hyperflow/job-template.yaml
+        subPath: job-template.yaml
+        readOnly: true
+      - name: worker-config
+        mountPath: /work_dir/workflow.config.executionModels.json
+        subPath: workflow.config.executionModels.json
+        readOnly: true
     worker:
       image: *wf-worker-image
       additionalVariables:
