@@ -1,0 +1,21 @@
+name: hyperflow-api
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pandas
+  - numpy
+  - matplotlib
+  - seaborn
+  - scipy
+  - requests
+  - jupyter
+  - scikit-learn
+  - tqdm
+  - pip
+  - pip:
+      - fastapi
+      - uvicorn
+      - lightgbm
+      - joblib
