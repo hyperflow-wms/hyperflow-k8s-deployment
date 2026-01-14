@@ -53,6 +53,11 @@ hyperflow-nfs-data:
     - mountPath: /workflow-data
       name: workflow-data
 
+################################
+####  Hyperflow NFS Volume  ####
+################################
+hyperflow-nfs-volume:
+  enabled: true
 
 #####################
 ####    Redis    ####

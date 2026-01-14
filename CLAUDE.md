@@ -13,78 +13,52 @@ kubectl create namespace hyperflow
 2. Install `hyperflow-ops` helm chart
 
 ```bash
-helm upgrade -n hyperflow --dependency-update -i hf-ops ./charts/hyperflow-ops --set worker-pools.enabled=true
+helm install -n hyperflow --dependency-update hf-ops ./charts/hyperflow-ops --set worker-pools.enabled=true
 ```
 
-3. Install `hyperflow-engine` helm chart
+2. Download custom dataset by installing `hyperflow-dataset-stager` (Optional)
+
+To execute a custom workflow download it into `hyperflow-engine` PersistentVolumeClaim using `hyperflow-dataset-stager`, which handles both creation of the PVC and downloading the data archive over Kubernetes Job. In later steps the NFS populated with data will be mounted into `hyperflow-engine` deployment `/work_dir` directory.
 
 ```bash
-helm upgrade -n hyperflow --dependency-update -i hf-run-montage ./charts/hyperflow-run
+helm install -n hyperflow --dependency-update hf-dataset-stager-montage ./charts/hyperflow-dataset-stager
 ```
 
-### Running custom workflows 
-The `hyperflow-engine` supports running custom workflows by downloading the workflow archives into `hyperflow-engine` deployment's `/work_dir` directory.
-
-#### Supported workflow archive storages
-* `AWS S3`
-
-Provide following values to `hyperflow-run` helm chart to download workflow archive from AWS S3 using initContainers: 
+Pass following `values.yaml` to download workflow archive using `hyperflow-dataset-stager`:
 
 ```yaml
-hyperflow-engine:
-  initContainers:
-    enabled: true
-    dataInjector:
-      enabled: true
-      source:
-        autoGenerateSecret: true
-        s3:
-          accessKey: "<AWS_IAM_ACCESS_KEY>"
-          secretKey: "<AWS_IAM_ACCESS_SECRET_KEY>"
-          bucket: "<AWS_S3_BUCKET_NAME>"
-          filename: "<AWS_S3_BUCKET_FILENAME>"
-    dataPreprocess:
-        enabled: true
-    
-```
-
-* `Remote storage`
-
-Provide following values to `hyperflow-run` helm chart to download workflow archive from HTTP hosting using initContainers:
-
-```yaml
-hyperflow-engine:
-  initContainers:
-    enabled: true
-    dataInjector:
-        enabled: true
+datasetStager:
+  jobSpec:
+    volumes:
+    - name: workflow-data
+        persistentVolumeClaim:
+        claimName: nfs
+    restartPolicy: "Never"
+    containers:
+    - name: injector
         image: <CUSTOM_IMAGE>
         volumeMounts:
         - name: workflow-data
-          mountPath: "/work_dir"
+            mountPath: "/work_dir"
         command:
         - "/bin/bash"
         - "-c"
         - >
-            echo "data-injector: invoked";
-            if [[ ! -f /work_dir/.dataInjectorFinished ]]; then
-            echo "Cleaning /work_dir directory...";
-            for f in /work_dir/*
-            do
-                rm -rf $f;
-            done;
-
-            <CUSTOM COMMAND TO DOWNLOAD WORKFLOW ARCHIVE to /work_dir/data.gz>
-
-            touch /work_dir/.dataInjectorFinished
-            else
-            echo "File /work_dir/.dataInjectorFinished exists";
-            echo "Downloading skipped.";
-            fi;
-            echo "data-injector: finished";
-    dataPreprocess:
-        enabled: true
+            <WORKFLOW DOWNLOADING SCRIPT to /work_dir directory>
+        resources:
+        requests:
+            memory: "64Mi"
+            cpu: "250m"
 ```
+
+3. Run workflow execution by installing `hyperflow-engine` helm chart
+
+
+```bash
+helm upgrade -n hyperflow --dependency-update -i hf-run-montage ./charts/hyperflow-run # remember to add --set hyperflow-nfs-volume.enabled=false if Persistant Volume Claim has been already created by hyperflow-dataset-stager helm release
+```
+
+#### Passing local files into `hyperflow-run` helm chart
 
 * `Local directory to remote Kubernetes cluster`
 

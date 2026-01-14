@@ -12,6 +12,7 @@ dependencies:
   - name: nfs-volume
     repository: file://../nfs-volume
     version: 0.*
+    condition: hyperflow-nfs-volume.enabled
   - name: hyperflow-engine
     repository: file://../hyperflow-engine
     version: 0.*

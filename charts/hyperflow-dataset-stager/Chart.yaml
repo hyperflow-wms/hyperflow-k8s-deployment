@@ -1,0 +1,12 @@
+apiVersion: v2
+name: hyperflow-dataset-stager
+description: Chart downloading dataset to hyperflow data volume 
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+dependencies:
+  - name: nfs-volume
+    repository: file://../nfs-volume
+    version: 0.*
+    condition: nfs-volume.enabled

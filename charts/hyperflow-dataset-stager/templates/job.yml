@@ -1,0 +1,16 @@
+{{- if (index .Values "datasetStager" "enabled") }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hyperflow-{{ .Release.Name }}
+spec:
+  template:
+    metadata:
+      labels:
+        app: hyperflow
+        role: dataset-stager
+        chart: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+    spec:
+      {{- toYaml .Values.datasetStager.jobSpec | nindent 6 }}
+{{- end }}
