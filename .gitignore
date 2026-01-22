@@ -1,2 +1,4 @@
 .vscode/
 .metals/
+charts/**/charts/*
+charts/**/Chart.lock
