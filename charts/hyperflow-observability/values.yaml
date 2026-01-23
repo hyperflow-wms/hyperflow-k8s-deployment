@@ -1,0 +1,220 @@
+opensearch:
+  replicas: 1
+
+  config:
+    opensearch.yml: |
+      cluster.name: opensearch-cluster
+      network.host: 0.0.0.0
+      plugins:
+        security:
+          disabled: true
+  extraEnvs:
+    - name: OPENSEARCH_JAVA_OPTS
+      value: "-Xms512m -Xmx512m"
+    - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
+      value: "Hyperflow1!"
+
+opensearch-dashboards:
+  opensearchHosts: "http://opensearch-cluster-master:9200"
+
+  extraEnvs:
+    - name: DISABLE_SECURITY_DASHBOARDS_PLUGIN
+      value: "true"
+
+  resources:
+    requests:
+      cpu: "200m"
+      memory: 0.5Gi
+    limits:
+      cpu: "1"
+      memory: 3Gi
+
+data-prepper:
+  pipelineConfig:
+    enabled: true
+    config:
+      entry-pipeline:
+        delay: "100"
+        source:
+          otel_trace_source:
+            ssl: false
+        sink:
+          - pipeline:
+              name: "raw-pipeline"
+          - pipeline:
+              name: "service-map-pipeline"
+      raw-pipeline:
+        source:
+          pipeline:
+            name: "entry-pipeline"
+        processor:
+          - otel_trace_raw:
+        sink:
+          - opensearch:
+              hosts: [ "http://opensearch-cluster-master:9200" ]
+              insecure: true
+              username: admin
+              password: "Hyperflow1!"
+              index_type: custom
+              index: hyperflow_traces
+      service-map-pipeline:
+        delay: "100"
+        source:
+          pipeline:
+            name: "entry-pipeline"
+        processor:
+          - service_map_stateful:
+        sink:
+          - opensearch:
+              hosts: [ "http://opensearch-cluster-master:9200" ]
+              insecure: true
+              username: admin
+              password: "Hyperflow1!"
+              index_type: trace-analytics-service-map
+
+      metrics-pipeline:
+        source:
+          otel_metrics_source:
+            ssl: false
+        sink:
+          - opensearch:
+              hosts: [ "http://opensearch-cluster-master:9200" ]
+              insecure: true
+              username: admin
+              password: "Hyperflow1!"
+              index_type: custom
+              index: hyperflow_metrics
+
+      logs-pipeline:
+        source:
+          otel_logs_source:
+            ssl: false
+        sink:
+          - opensearch:
+              hosts: [ "http://opensearch-cluster-master:9200" ]
+              insecure: true
+              username: admin
+              password: "Hyperflow1!"
+              index: hyperflow_logs
+
+opentelemetry-collector:
+  mode: "statefulset"
+
+  image:
+    repository: "otel/opentelemetry-collector"
+    tag: "0.123.0"
+
+  command:
+    name: "otelcol"
+
+  resources:
+    requests:
+      cpu: 1
+      memory: 5Gi
+    limits:
+      cpu: 2
+      memory: 5Gi
+
+  config:
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+      pprof:
+        endpoint: 0.0.0.0:1777
+      zpages:
+        endpoint: 0.0.0.0:55679
+
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: "kube-state-metrics"
+              scrape_interval: 1s
+              metrics_path: /federate
+              honor_labels: true
+              params:
+                match[]:
+                  - '{label_origin="hyperflow"}'
+              static_configs:
+                - targets: [ "monitoring-prometheus:9090" ]
+              metric_relabel_configs:
+                - source_labels: [ __name__ ]
+                  regex: "kube_deployment_labels"
+                  action: drop
+            - job_name: "cpu-by-node"
+              scrape_interval: 5s
+              metrics_path: /federate
+              honor_labels: true
+              params:
+                match[]:
+                  - 'node_cpu_usage_percent'
+              static_configs:
+                - targets: [ "monitoring-prometheus:9090" ]
+            - job_name: "memory-by-node"
+              scrape_interval: 5s
+              metrics_path: /federate
+              honor_labels: true
+              params:
+                match[]:
+                  - 'node_memory_usage_percent'
+              static_configs:
+                - targets: [ "monitoring-prometheus:9090" ]
+            - job_name: "rabbitmq-exporter"
+              scrape_interval: 1s
+              static_configs:
+                - targets: [ "hf-ops-prometheus-rabbitmq-exporter:9419" ]
+              metric_relabel_configs:
+                - source_labels: [ __name__ ]
+                  regex: "rabbitmq_queue_messages_ready"
+                  action: keep
+
+    processors:
+      batch: { }
+      filter:
+        metrics:
+          exclude:
+            match_type: regexp
+            metric_names:
+              - "up"
+              - "scrape_.*"
+
+
+    exporters:
+      otlp/traces:
+        endpoint: hf-obs-data-prepper:21890
+        tls:
+          insecure: true
+          insecure_skip_verify: true
+      otlp/metrics:
+        endpoint: hf-obs-data-prepper:21891
+        tls:
+          insecure: true
+          insecure_skip_verify: true
+      otlp/logs:
+        endpoint: hf-obs-data-prepper:21892
+        tls:
+          insecure: true
+          insecure_skip_verify: true
+      debug:
+        verbosity: detailed
+
+    service:
+      pipelines:
+        traces:
+          receivers: [ otlp ]
+          processors: [ batch ]
+          exporters: [ debug, otlp/traces ]
+        metrics:
+          receivers: [ otlp, prometheus ]
+          processors: [ batch, filter ]
+          exporters: [ debug, otlp/metrics ]
+        logs:
+          receivers: [ otlp ]
+          processors: [ batch ]
+          exporters: [ debug, otlp/logs ]
+
+      extensions: [ health_check, pprof, zpages ]
