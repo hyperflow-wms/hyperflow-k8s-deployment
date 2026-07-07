@@ -197,6 +197,17 @@ rabbitmq:
   fullnameOverride: rabbitmq
   replicaCount: 1
 
+  # Bitnami moved older free-tier image tags (including the 4.0.5-debian-12-r2
+  # this chart version pins) out of the `bitnami/*` Docker Hub namespace to
+  # `bitnamilegacy/*`. Without this override, the rabbitmq-0 pod's init
+  # container sits in ImagePullBackOff forever, since the pinned tag 404s.
+  # See https://github.com/bitnami/charts/issues/30850.
+  image:
+    repository: bitnamilegacy/rabbitmq
+  global:
+    security:
+      allowInsecureImages: true
+
   persistence:
     enabled: false
 

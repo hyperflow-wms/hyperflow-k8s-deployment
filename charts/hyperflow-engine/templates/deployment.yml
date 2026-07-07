@@ -92,7 +92,7 @@ spec:
                 fieldPath: metadata.namespace
           {{- if (.Values.workerPools).enabled }}
           - name: RABBIT_HOSTNAME
-            value: {{ .Values.workerPools.workerPoolDefaults.rabbitHostname | quote }}
+            value: {{ .Values.workerPools.workerPoolDefaults.rabbitHostname | default (printf "rabbitmq.%s" .Release.Namespace) | quote }}
           {{- end }}
           {{- with .Values.containers.worker.additionalVariables }}
           {{ . | toYaml | nindent 10 }}

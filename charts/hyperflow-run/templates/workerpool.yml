@@ -11,7 +11,7 @@ metadata:
 spec:
   taskType: {{ $merged.taskType }}
   image: {{ $merged.image }}
-  rabbitHostname: {{ $merged.rabbitHostname }}
+  rabbitHostname: {{ $merged.rabbitHostname | default (printf "rabbitmq.%s" $.Release.Namespace) }}
   prometheusUrl: {{ $merged.prometheusUrl }}
   redisUrl: {{ $merged.redisUrl }}
   minReplicaCount: {{ $merged.minReplicaCount }}

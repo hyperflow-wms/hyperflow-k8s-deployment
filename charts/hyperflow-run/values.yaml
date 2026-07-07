@@ -16,7 +16,11 @@ workerPools:
   enabled: &wfpoolsenabled true # If true, WorkerPool resources will be created; requires WorkerPool operator to be installed
   workerPoolDefaults: # default settings, override in individual 'pools' resources
     image: hyperflowwms/montage2-worker:je-1.3.0
-    rabbitHostname: &rabbithostname rabbitmq.default
+    # Empty means "auto-derive as rabbitmq.<release-namespace>" (see
+    # hyperflow-engine/templates/deployment.yml and templates/workerpool.yml).
+    # Override explicitly only if your RabbitMQ Service has a different
+    # name or lives in a different namespace than this release.
+    rabbitHostname: &rabbithostname ""
     prometheusUrl: http://monitoring-prometheus.default:9090
     redisUrl: redis://redis:6379
     minReplicaCount: 0
