@@ -130,6 +130,9 @@ To run a different workflow, change two container images in two lines on top of 
 * Worker image: `wf-worker-image: &wf-worker-image hyperflowwms/montage2-worker:je-1.3.2`
 * Data image: `wf-input-data-image: &wf-data-image hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest`
 
+### Advanced: autoscalable worker pools
+Besides the default one-Kubernetes-Job-per-task execution model, HyperFlow supports an autoscalable **worker pools** model (KEDA-driven, queue-length-based scaling) for the most numerous task types. See [docs/worker-pools.md](docs/worker-pools.md) for how it works and how to run it.
+
 ### Cleanup
 Always first delete `hyperlow-run` release(s), before deleting `hyperflow-ops` (otherwise you may get Pods stuck in `Terminating` state). For example:
 ```
