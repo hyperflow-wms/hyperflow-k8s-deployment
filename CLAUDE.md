@@ -116,13 +116,15 @@ hyperflow-engine:
         name: worker-config
 ```
 
-4. Create `ResourceQuota` resources
+4. `ResourceQuota` (created by the chart — do not create it manually)
 
-The implementation of the Worker Pools Operator requires `ResourceQuota` to be present in the namespace.
-
-```bash
-kubectl create -n hyperflow quota hflow-requests --hard=requests.cpu=21,requests.memory=60Gi
-```
+The Worker Pools Operator requires a namespace `ResourceQuota` (`hflow-requests`).
+The `hyperflow-run` chart now creates it for you, scoped to worker pods via a
+PriorityClass (`workerPools.resourceQuota` in its `values.yaml`). Do **not** also
+run `kubectl create quota` — a second, unscoped quota would reject request-less
+monitoring pods and break the operator's scaling metric (two `kube_resourcequota`
+series). Just set `workerPools.resourceQuota.hard` to your worker-node capacity.
+See [docs/worker-pools.md](docs/worker-pools.md).
 
 5. Wait until all pods in workflow namespace are in running state
 

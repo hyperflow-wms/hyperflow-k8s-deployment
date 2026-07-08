@@ -30,39 +30,43 @@ helm upgrade --dependency-update -n workerpools -i hf-ops hyperflow-ops
 helm upgrade --dependency-update -n workerpools -i hf-run-montage hyperflow-run
 ```
 
-### Create the ResourceQuota (scoped to worker pods)
+### ResourceQuota (created by the chart)
 
 The operator's PrometheusRules read a namespace `ResourceQuota` named
 `hflow-requests` to learn the maximum resources available for processing a
-workflow (it is the scaling ceiling). This object is a **manual prerequisite**:
-the Helm charts do **not** create it — you apply it yourself, once, in the
-namespace where you run the workflow.
+workflow (it is the scaling ceiling), so worker pools require one. **The
+`hyperflow-run` chart creates it for you** — no manual `kubectl apply`. You only
+size it, under `workerPools.resourceQuota` in the chart's `values.yaml`:
 
-A ready-to-apply manifest is provided at
-[hflow-requests-quota.yaml](hflow-requests-quota.yaml) in this directory. Do
-the following:
+```yaml
+workerPools:
+  resourceQuota:
+    enabled: true
+    hard:
+      requests.cpu: "21"      # <- set to the total allocatable CPU of your hfworker nodes
+      requests.memory: 60Gi   # <- and their total allocatable memory
+    priorityClassName: hyperflow-worker
+```
 
-1. **Edit `spec.hard`** in that file to match the total allocatable cpu/memory
-   of your worker nodes (the nodes labelled `hyperflow-wms/nodepool: hfworker`).
-   The committed values (21 CPU / 60Gi) are only an example; resource limits
-   need not be specified.
-2. **Apply it** to your workflow namespace:
-   ```bash
-   kubectl apply -n workerpools -f docs/hflow-requests-quota.yaml
-   ```
+Set `hard` to the total allocatable cpu/memory of your worker nodes (labelled
+`hyperflow-wms/nodepool: hfworker`); resource limits need not be specified.
 
-The manifest already carries a `scopeSelector` that limits the quota to worker
-pods (which the operator chart tags with `priorityClassName: hyperflow-worker`;
-the chart also ships that PriorityClass). This is what makes it safe to run the
-quota in the same namespace as the monitoring stack: without the scope, a plain
-quota on `requests.cpu`/`requests.memory` would reject every request-less pod —
-including kube-prometheus-stack's cert-gen hook Job and the Prometheus server —
-and would count control-plane pods against the worker ceiling. With the scope,
-request-less monitoring pods schedule normally and only worker pods count. The
-scaling rule reads only `kube_resourcequota{type="hard"}`, which scoping does
-not change, so autoscaling is unaffected — see
+The chart stamps the quota with a `scopeSelector` limiting it to worker pods
+(the operator tags worker pods with `priorityClassName: hyperflow-worker` and
+the operator chart ships that PriorityClass). This is what makes it safe to run
+the quota in the same namespace as the monitoring stack: without the scope, a
+plain quota on `requests.cpu`/`requests.memory` would reject every request-less
+pod — including kube-prometheus-stack's cert-gen hook Job and the Prometheus
+server — and would count control-plane pods against the worker ceiling. With the
+scope, request-less monitoring pods schedule normally and only worker pods
+count. The scaling rule reads only `kube_resourcequota{type="hard"}`, which
+scoping does not change, so autoscaling is unaffected — see
 [namespace-split-design.md](namespace-split-design.md) (Option C) for the full
 rationale and validation.
+
+> Do **not** also create a quota by hand (`kubectl create quota`): a second,
+> unscoped `hflow-requests` would reintroduce the request-less-pod rejection and
+> add a duplicate `kube_resourcequota` series that confuses the scaling rule.
 
 ### Configure the HyperFlow engine (execution models)
 

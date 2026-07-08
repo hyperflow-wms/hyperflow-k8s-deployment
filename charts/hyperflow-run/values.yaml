@@ -14,6 +14,20 @@ wf-input-data-from-docker: &input-from-docker true
 #################################
 workerPools:
   enabled: &wfpoolsenabled true # If true, WorkerPool resources will be created; requires WorkerPool operator to be installed
+  # The operator's PrometheusRules read this namespace ResourceQuota to compute
+  # the worker scaling ceiling, so worker pools require it. The chart creates it
+  # for you (no manual kubectl apply). Set `hard` to the total allocatable
+  # cpu/memory of your worker nodes (label hyperflow-wms/nodepool: hfworker).
+  # The scopeSelector limits the quota to worker pods (tagged with
+  # priorityClassName by the operator chart) so request-less monitoring pods are
+  # not rejected and control-plane pods don't count. See docs/worker-pools.md.
+  resourceQuota:
+    enabled: true
+    name: hflow-requests
+    priorityClassName: hyperflow-worker # must match the PriorityClass shipped by the operator chart
+    hard:
+      requests.cpu: "21"
+      requests.memory: 60Gi
   workerPoolDefaults: # default settings, override in individual 'pools' resources
     image: hyperflowwms/montage2-worker:je-1.3.0
     # Empty means "auto-derive as rabbitmq.<release-namespace>" (see

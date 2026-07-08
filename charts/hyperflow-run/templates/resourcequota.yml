@@ -1,0 +1,22 @@
+{{- if and (index .Values "workerPools" "enabled") (index .Values "workerPools" "resourceQuota" "enabled") }}
+{{- $rq := index .Values "workerPools" "resourceQuota" }}
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: {{ $rq.name | default "hflow-requests" }}
+  # No explicit namespace: renders into the release namespace (the workflow
+  # namespace), same as the WorkerPool CRs.
+spec:
+  hard:
+    requests.cpu: {{ index $rq "hard" "requests.cpu" | quote }}
+    requests.memory: {{ index $rq "hard" "requests.memory" | quote }}
+  # Scope the quota to worker pods only. The operator stamps this PriorityClass
+  # on worker pods; request-less control-plane/monitoring pods do not match and
+  # so bypass the quota. Scaling is unaffected (the rule reads type="hard").
+  scopeSelector:
+    matchExpressions:
+    - scopeName: PriorityClass
+      operator: In
+      values:
+      - {{ $rq.priorityClassName | default "hyperflow-worker" | quote }}
+{{- end }}
