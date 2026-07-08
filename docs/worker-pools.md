@@ -4,7 +4,7 @@ Hyperflow supports an advanced task execution model based on **autoscalable work
 In this model, separate worker pools are created for most numerous types of tasks (e.g. mProject, mDiffFit, mBackground in Montage), while other tasks are usually executed as Kubernetes jobs (default execution
 model).
 
-<img src="https://github.com/hyperflow-wms/hyperflow-k8s-deployment/blob/master/examples/workerpools/worker-pool-model.svg" width="500">
+<img src="img/worker-pool-model.svg" width="500">
 
 The implementation is based on a custom [WorkerPool operator](https://github.com/hyperflow-wms/hyperflow-worker-pool-operator) which creates the worker pool deployments and other resources required for their autoscaling. The [Keda autoscaler](https://keda.sh) enables scaling of the worker pool deployments based on the length of their task queues (implemented using RabbitMQ) and also scaling them to zero. 
 
@@ -20,7 +20,7 @@ kubectl create namespace workerpools
 
 ### Install Helm charts
 
-Worker pools are configured in the [values.yaml](https://github.com/hyperflow-wms/hyperflow-k8s-deployment/blob/master/charts/hyperflow-run/values.yaml) of the `hyperflow-run` chart. Use preset
+Worker pools are configured in the [values.yaml](../charts/hyperflow-run/values.yaml) of the `hyperflow-run` chart. Use preset
 values to run a small Montage workflow. Make sure the `workerPools.enabled` flag is set to `true`.
 
 Install the charts as follows (use `--namespace <namespace>` if using specific namespace):
@@ -30,23 +30,52 @@ helm upgrade --dependency-update -n workerpools -i hf-ops hyperflow-ops
 helm upgrade --dependency-update -n workerpools -i hf-run-montage hyperflow-run
 ```
 
-### Create ResourceQuota
+### Create the ResourceQuota (scoped to worker pods)
 
-The implementation of the Worker Pools Operator requires `ResourceQuota` object to be created
-in the namespace where workflows are executed. Such an object is used in PrometheusRules to
-obtain the maximum amount of resources designated to processing a workflow. Currently this step is done manually. A sample `ResourceQuota` manifest is placed in [resourcequota.yml](resourcequota.yml) file. To create this resource, execute the following command Assuming you are in repository main directory):
-```
-kubectl create -n workerpools quota hflow-requests --hard=requests.cpu=21,requests.memory=60Gi
-```
+The operator's PrometheusRules read a namespace `ResourceQuota` named
+`hflow-requests` to learn the maximum resources available for processing a
+workflow (it is the scaling ceiling). This object is a **manual prerequisite**:
+the Helm charts do **not** create it — you apply it yourself, once, in the
+namespace where you run the workflow.
 
-The `ResourceQuota` object should be adjusted to the total allocatable resources in the worker nodes used to
-run workflow tasks (labelled `hyperflow-wms/nodepool: hfworker`). 
-Resource limits do not need to be specified. 
+A ready-to-apply manifest is provided at
+[hflow-requests-quota.yaml](hflow-requests-quota.yaml) in this directory. Do
+the following:
 
-### Configure Hyperflow engine
+1. **Edit `spec.hard`** in that file to match the total allocatable cpu/memory
+   of your worker nodes (the nodes labelled `hyperflow-wms/nodepool: hfworker`).
+   The committed values (21 CPU / 60Gi) are only an example; resource limits
+   need not be specified.
+2. **Apply it** to your workflow namespace:
+   ```bash
+   kubectl apply -n workerpools -f docs/hflow-requests-quota.yaml
+   ```
 
-Create `workflow.config.executionModels.json` file in the `/work_dir` directory of the `hyperflow-engine` pod
-using the following command (content for the default workflow, otherwise adjust the task names):
+The manifest already carries a `scopeSelector` that limits the quota to worker
+pods (which the operator chart tags with `priorityClassName: hyperflow-worker`;
+the chart also ships that PriorityClass). This is what makes it safe to run the
+quota in the same namespace as the monitoring stack: without the scope, a plain
+quota on `requests.cpu`/`requests.memory` would reject every request-less pod —
+including kube-prometheus-stack's cert-gen hook Job and the Prometheus server —
+and would count control-plane pods against the worker ceiling. With the scope,
+request-less monitoring pods schedule normally and only worker pods count. The
+scaling rule reads only `kube_resourcequota{type="hard"}`, which scoping does
+not change, so autoscaling is unaffected — see
+[namespace-split-design.md](namespace-split-design.md) (Option C) for the full
+rationale and validation.
+
+### Configure the HyperFlow engine (execution models)
+
+The engine decides which task types run on worker pools (rather than as plain
+Kubernetes Jobs) via a `workflow.config.executionModels.json` file mounted at
+`/work_dir`. When you deploy with the `hyperflow-run` chart this file is
+**generated automatically** from the `workerPools.pools` list (see
+`charts/hyperflow-run/templates/workerpools-cm.yml`) and mounted into the
+engine — no manual step is needed.
+
+Only if you run the engine outside the chart, create the file manually,
+listing each worker-pool task type (content for the default Montage workflow;
+otherwise adjust the task names):
 ```
 kubectl exec -n workerpools -it deployment/hyperflow-engine -- sh -c 'cat > /work_dir/workflow.config.executionModels.json' <<EOF
 [
