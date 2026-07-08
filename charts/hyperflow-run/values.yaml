@@ -21,7 +21,13 @@ workerPools:
     # Override explicitly only if your RabbitMQ Service has a different
     # name or lives in a different namespace than this release.
     rabbitHostname: &rabbithostname ""
-    prometheusUrl: http://monitoring-prometheus.default:9090
+    # Empty means "auto-derive as http://monitoring-prometheus.<release-namespace>:9090"
+    # (see templates/workerpool.yml). The WorkerPool operator hands this to
+    # KEDA as the ScaledObject trigger's serverAddress; a wrong namespace makes
+    # KEDA's prometheus scaler fail DNS resolution (TriggerError) and the pool
+    # never scales. Override explicitly only if your Prometheus Service has a
+    # different name or lives in a different namespace than this release.
+    prometheusUrl: ""
     redisUrl: redis://redis:6379
     minReplicaCount: 0
     maxReplicaCount: 50

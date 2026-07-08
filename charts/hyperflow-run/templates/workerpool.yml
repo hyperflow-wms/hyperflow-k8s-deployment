@@ -12,7 +12,7 @@ spec:
   taskType: {{ $merged.taskType }}
   image: {{ $merged.image }}
   rabbitHostname: {{ $merged.rabbitHostname | default (printf "rabbitmq.%s" $.Release.Namespace) }}
-  prometheusUrl: {{ $merged.prometheusUrl }}
+  prometheusUrl: {{ $merged.prometheusUrl | default (printf "http://monitoring-prometheus.%s:9090" $.Release.Namespace) }}
   redisUrl: {{ $merged.redisUrl }}
   minReplicaCount: {{ $merged.minReplicaCount }}
   maxReplicaCount: {{ $merged.maxReplicaCount }}
