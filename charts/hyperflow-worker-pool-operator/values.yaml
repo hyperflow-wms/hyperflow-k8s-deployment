@@ -20,6 +20,7 @@ config:
             labels:
               app: {poolName}
           spec:
+            priorityClassName: hyperflow-worker
             terminationGracePeriodSeconds: 300
             nodeSelector:
               hyperflow-wms/nodepool: hfworker

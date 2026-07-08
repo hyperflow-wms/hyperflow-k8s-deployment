@@ -1,0 +1,11 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: hyperflow-worker
+# value 0 = same effective priority as an unprioritized pod, so scheduling and
+# preemption behavior is unchanged. The class exists only to tag worker pods so
+# the hflow-requests ResourceQuota can scope itself to worker capacity via
+# scopeSelector (see docs/namespace-split-design.md, Option C).
+value: 0
+globalDefault: false
+description: "HyperFlow worker-pool pods. Used to scope the hflow-requests ResourceQuota to worker capacity only; does not affect scheduling priority."
