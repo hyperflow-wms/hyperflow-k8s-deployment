@@ -33,7 +33,12 @@ workerPools:
       requests.cpu: "21"
       requests.memory: 60Gi
   workerPoolDefaults: # default settings, override in individual 'pools' resources
-    image: hyperflowwms/montage-worker:6.0-je1.4.0
+    # Same worker image as the pod-per-task path (`containers.worker.image`):
+    # both run the hyperflow-job-executor. Reuse the `wf-worker-image` anchor so
+    # the two cannot drift -- a pool image whose executor predates the streams
+    # completion transport (job-executor < 1.4.0) silently never completes tasks
+    # when the engine runs with completionTransport: stream.
+    image: *wf-worker-image
     # Empty means "auto-derive as rabbitmq.<release-namespace>" (see
     # hyperflow-engine/templates/deployment.yml and templates/workerpool.yml).
     # Override explicitly only if your RabbitMQ Service has a different
