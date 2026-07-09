@@ -1,17 +1,26 @@
 # Fast local testing values for hyperflow-ops
-# Optimized for quick startup and minimal resource usage
-
+# Optimized for quick startup and minimal resource usage.
+#
+# NOTE: worker pools need the FULL kube-prometheus-stack (Prometheus +
+# prometheus-operator, for the PrometheusRule CRD the operator creates per
+# pool) and prometheus-rabbitmq-exporter (queue-length metric) and KEDA
+# (scaling) — none of those can be disabled for a worker-pools test. Only
+# grafana, alertmanager, and prometheus-adapter (confirmed unused: KEDA
+# queries Prometheus directly, not the custom-metrics API) are genuinely
+# skippable for speed.
+#
+# The top-level `worker-pools.enable-*` keys used to appear here too, but
+# they only take effect via YAML anchors defined in the CHART's OWN
+# values.yaml (charts/hyperflow-ops/values.yaml) — anchors don't resolve
+# across `-f` files, so those keys had ZERO effect on the nested nodes below;
+# this file sets the real nested `hyperflow-worker-pool-operator.*` paths
+# directly instead. `worker-pools.enabled` is NOT decorative, though — it's
+# the dependency `condition:` (Chart.yaml) that includes the whole operator
+# subchart (RabbitMQ, KEDA, kube-prometheus-stack, the operator itself) —
+# omitting it here falls back to the chart default (false) and silently
+# drops everything below.
 worker-pools:
   enabled: true
-  enable-prometheus-adapter: false  # Disable for faster startup
-  enable-prometheus-rabbitmq-exporter: false
-  enable-keda: true
-  enable-rabbitmq: true
-  enable-kube-prometheus-stack: false  # Disable heavy monitoring for local tests
-  enable-alert-manager: false
-  enable-grafana: false
-  enable-prometheus-operator: false
-  enable-prometheus: false
 
 nfs-server-provisioner:
   nodeSelector:
@@ -23,6 +32,14 @@ nfs-server-provisioner:
 hyperflow-worker-pool-operator:
   nodeSelector:
     hyperflow-wms/nodepool: hfmaster
+
+  prometheus-adapter:
+    enabled: false  # unused: KEDA queries Prometheus directly
+
+  prometheus-rabbitmq-exporter:
+    enabled: true  # required: source of the queue-length scaling metric
+    nodeSelector:
+      hyperflow-wms/nodepool: hfmaster
 
   keda:
     enabled: true
@@ -44,7 +61,7 @@ hyperflow-worker-pool-operator:
     # required when not using Bitnami “standard” images
     global:
       security:
-        allowInsecureImages: true   
+        allowInsecureImages: true
     volumePermissions:
       enabled: true
       image:
@@ -57,4 +74,45 @@ hyperflow-worker-pool-operator:
       limits:
         cpu: 500m
         memory: 512Mi
+
+  kube-prometheus-stack:
+    enabled: true  # required: PrometheusRule CRD + Prometheus server + cert-gen hook
+
+    alertmanager:
+      enabled: false  # not needed for worker-pool scaling
+
+    grafana:
+      enabled: false  # not needed for worker-pool scaling
+
+    kube-state-metrics:
+      nodeSelector:
+        hyperflow-wms/nodepool: hfmaster
+
+    prometheusOperator:
+      enabled: true
+      nodeSelector:
+        hyperflow-wms/nodepool: hfmaster
+      # Reduce resources for local testing
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+
+    prometheus:
+      enabled: true
+      prometheusSpec:
+        nodeSelector:
+          hyperflow-wms/nodepool: hfmaster
+        # Reduce resources and retention for local testing
+        retention: 1h
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
 
