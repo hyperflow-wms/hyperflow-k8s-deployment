@@ -111,6 +111,10 @@ Hyperflow provides two key Helm charts:
 - `hyperflow-run` - to run a workflow
 
 To run a sample workflow on a clean Kubernetes cluster, you should do the following:
+- Rebuild the vendored local subcharts — do this after **any** edit under `charts/` (see [Local subcharts and stale vendored archives](#local-subcharts-and-stale-vendored-archives))
+```
+./sync-chart-deps.sh
+```
 - Install the `hyperflow-ops` chart 
 ```
 helm upgrade --dependency-update -i hf-ops hyperflow-ops
@@ -119,6 +123,37 @@ helm upgrade --dependency-update -i hf-ops hyperflow-ops
 ```
 helm upgrade --dependency-update -i hf-run-montage hyperflow-run
 ```
+
+#### Local subcharts and stale vendored archives
+
+Several umbrella charts (`hyperflow-ops`, `hyperflow-run`, `hyperflow-all`,
+`hyperflow-dataset-stager`) pull sibling charts in via `file://` dependencies.
+Helm vendors those into `charts/<umbrella>/charts/<sub>-<ver>.tgz`, which are
+gitignored build artifacts.
+
+> **`--dependency-update` does not refresh them.** That flag updates
+> dependencies *only if they are missing*, so an existing-but-stale archive is
+> silently reused: you edit `charts/hyperflow-engine/...`, deploy, and get the
+> **old** template — no warning, no error.
+
+Repackaging a `file://` subchart from source needs an explicit
+`helm dependency build <chart>` (or `update`). Running one before every install
+is the whole fix; `sync-chart-deps.sh` just does it for every umbrella chart at
+once and adds a guard for when you forget:
+
+```bash
+./sync-chart-deps.sh           # rebuild vendored subcharts from source
+./sync-chart-deps.sh --check   # exit 1 if any is stale (CI / pre-deploy guard)
+```
+
+Prefer `build` over `update`: `build` resolves from `Chart.lock`, while `update`
+re-resolves the **remote** version ranges — which this repo pins with wildcards
+(`kube-prometheus-stack 68.*.*`, `keda 2.16.*`, `rabbitmq 15.2.*`, …) — so
+`update` can silently bump a third-party chart under you. The script uses
+`build`, falling back to `update` only when no lock file exists.
+
+A fresh clone is always correct (no archives yet); it is long-lived working
+copies that rot. When in doubt, run `./sync-chart-deps.sh --check`.
 - Once all pods are up and running or completed, you can manually run the workflow as follows:
 ```
 kubectl exec -it <hyperflow-engine-pod> sh
