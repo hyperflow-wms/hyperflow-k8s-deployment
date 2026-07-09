@@ -14,7 +14,7 @@ wf-input-data-from-docker: &input-from-docker true
 #################################
 workerPools:
   enabled: &wfpoolsenabled true # If true, WorkerPool resources will be created; requires WorkerPool operator to be installed
-  # `hard` defines the total CPU/memory available to the workflow, i.e. the
+  # `resourceQuota.hard` defines the total CPU/memory available to the workflow, i.e. the
   # combined resource budget for all worker pods. Set it to the total allocatable
   # capacity of your worker nodes (label hyperflow-wms/nodepool: hfworker).
   #
