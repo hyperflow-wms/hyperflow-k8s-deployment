@@ -10,8 +10,9 @@ volumes:
 
 containers:
   hyperflow:
-    image: hyperflowwms/hyperflow:v1.6.0
+    image: hyperflowwms/hyperflow:v1.9.1
     port: 8080
+    completionTransport: ""
     runAsServer: false
     serverCommand:
       - "/bin/sh"

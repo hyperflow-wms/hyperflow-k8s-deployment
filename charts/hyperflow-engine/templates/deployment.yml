@@ -90,6 +90,13 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          {{- with .Values.containers.hyperflow.completionTransport }}
+          # Task-completion notification transport ("stream" | "set").
+          # Omitted when empty, leaving the engine on its own default ("set",
+          # the legacy two-SADD protocol). Requires an engine image >= v1.9.0.
+          - name: HF_VAR_COMPLETION_TRANSPORT
+            value: {{ . | quote }}
+          {{- end }}
           {{- if (.Values.workerPools).enabled }}
           - name: RABBIT_HOSTNAME
             value: {{ .Values.workerPools.workerPoolDefaults.rabbitHostname | default (printf "rabbitmq.%s" .Release.Namespace) | quote }}

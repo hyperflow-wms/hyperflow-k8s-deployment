@@ -1,5 +1,5 @@
-# Hyperflow engine image
-hf-engine-image: &hf-engine-image hyperflowwms/hyperflow:v1.9.0
+# Hyperflow engine image.
+hf-engine-image: &hf-engine-image hyperflowwms/hyperflow:v1.9.1
 
 # Change these to run a different workflow
 wf-worker-image: &wf-worker-image hyperflowwms/montage-worker:6.0-je1.4.0
