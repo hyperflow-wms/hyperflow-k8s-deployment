@@ -126,7 +126,7 @@ helm upgrade --dependency-update -i hf-run-montage hyperflow-run
 
 #### Local subcharts and stale vendored archives
 
-Several umbrella charts (`hyperflow-ops`, `hyperflow-run`, `hyperflow-all`,
+Several umbrella charts (`hyperflow-ops`, `hyperflow-run`,
 `hyperflow-dataset-stager`) pull sibling charts in via `file://` dependencies.
 Helm vendors those into `charts/<umbrella>/charts/<sub>-<ver>.tgz`, which are
 gitignored build artifacts.
