@@ -44,9 +44,9 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Environment variables:"
             echo "  CLUSTER_NAME               Kind cluster name (default: hyperflow-test)"
-            echo "  HF_ENGINE_IMAGE            HyperFlow engine image (default: hyperflowwms/hyperflow:latest)"
-            echo "  WORKER_IMAGE               Worker image (default: hyperflowwms/montage2-worker:latest)"
-            echo "  DATA_IMAGE                 Workflow data image (default: montage2-2mass-025-latest)"
+            echo "  HF_ENGINE_IMAGE            Engine image override (default: chart value)"
+            echo "  WORKER_IMAGE               Worker image override - pools + k8sCommand (default: chart value)"
+            echo "  DATA_IMAGE                 Workflow data image override (default: chart value)"
             echo "  AUTO_RUN                   Auto-start workflow (default: true)"
             echo "  DRY_RUN                    Enable dry run mode (default: false)"
             exit 0
@@ -62,9 +62,12 @@ done
 # Configuration
 CLUSTER_NAME="${CLUSTER_NAME:-hyperflow-test}"
 WORKFLOW="${WORKFLOW:-montage2}"
-HF_ENGINE_IMAGE="${HF_ENGINE_IMAGE:-hyperflowwms/hyperflow:latest}"
-WORKER_IMAGE="${WORKER_IMAGE:-hyperflowwms/montage2-worker:latest}"
-DATA_IMAGE="${DATA_IMAGE:-hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest}"
+# Container images: leave unset to use the defaults baked into
+# charts/hyperflow-run/values.yaml. Set any of these to override. WORKER_IMAGE
+# overrides BOTH the k8sCommand worker container AND every worker pool.
+HF_ENGINE_IMAGE="${HF_ENGINE_IMAGE:-}"
+WORKER_IMAGE="${WORKER_IMAGE:-}"
+DATA_IMAGE="${DATA_IMAGE:-}"
 AUTO_RUN="${AUTO_RUN:-true}"
 DRY_RUN="${DRY_RUN:-false}"
 
@@ -85,6 +88,26 @@ log_warn() {
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
+
+# Per-workflow profile: worker/data image + worker-pool defaults, selected by
+# WORKFLOW. An explicitly-set WORKER_IMAGE/DATA_IMAGE always wins (the ':=' below
+# only fills a value when it is empty). montage images fall through to the chart.
+WORKFLOW_VALUES=()
+case "$WORKFLOW" in
+    montage2|montage)
+        # images: chart defaults (montage-worker / montage2 data); pools: base values file
+        :
+        ;;
+    1000genome)
+        : "${WORKER_IMAGE:=hyperflowwms/1000genome-worker:1.1-je1.4.0}"
+        : "${DATA_IMAGE:=hyperflowwms/1000genome-data:latest}"
+        WORKFLOW_VALUES=(-f local/values-fast-test-run-1000genome.yaml)
+        log_info "Workflow profile '1000genome': worker=$WORKER_IMAGE data=$DATA_IMAGE"
+        ;;
+    *)
+        log_warn "Unknown WORKFLOW '$WORKFLOW' — using base (montage) values; set WORKER_IMAGE/DATA_IMAGE explicitly if needed"
+        ;;
+esac
 
 # Step 1: Create or reuse Kind cluster
 if [ "$FORCE_CLEAN" = "true" ]; then
@@ -108,27 +131,21 @@ fi
 # Step 2: Load locally-built images into Kind
 log_info "Loading locally-built images into Kind cluster..."
 
-# Check if images exist locally and load them
-if docker image inspect "$HF_ENGINE_IMAGE" >/dev/null 2>&1; then
-    log_info "Loading HyperFlow engine image: $HF_ENGINE_IMAGE"
-    kind load docker-image "$HF_ENGINE_IMAGE" --name "$CLUSTER_NAME"
-else
-    log_warn "HyperFlow engine image '$HF_ENGINE_IMAGE' not found locally. Will pull from registry."
-fi
-
-if docker image inspect "$WORKER_IMAGE" >/dev/null 2>&1; then
-    log_info "Loading worker image: $WORKER_IMAGE"
-    kind load docker-image "$WORKER_IMAGE" --name "$CLUSTER_NAME"
-else
-    log_warn "Worker image '$WORKER_IMAGE' not found locally. Will pull from registry."
-fi
-
-if docker image inspect "$DATA_IMAGE" >/dev/null 2>&1; then
-    log_info "Loading data image: $DATA_IMAGE"
-    kind load docker-image "$DATA_IMAGE" --name "$CLUSTER_NAME"
-else
-    log_warn "Data image '$DATA_IMAGE' not found locally. Will pull from registry."
-fi
+# Load any explicitly-overridden images that exist locally; the rest (and any
+# unset ones, which fall back to the chart defaults) are pulled from the registry.
+load_local_image() {
+    local img="$1" label="$2"
+    [ -z "$img" ] && return 0   # unset -> chart default, pulled from registry
+    if docker image inspect "$img" >/dev/null 2>&1; then
+        log_info "Loading $label image: $img"
+        kind load docker-image "$img" --name "$CLUSTER_NAME"
+    else
+        log_warn "$label image '$img' not found locally. Will pull from registry."
+    fi
+}
+load_local_image "$HF_ENGINE_IMAGE" "HyperFlow engine"
+load_local_image "$WORKER_IMAGE" "worker"
+load_local_image "$DATA_IMAGE" "data"
 
 # Step 3: Install hyperflow-ops if needed
 if helm list | grep -q "^hf-ops"; then
@@ -214,12 +231,25 @@ else
     ADMISSION_FLAGS=""
 fi
 
+# Only override images that were explicitly provided; unset ones use the chart
+# defaults. WORKER_IMAGE drives BOTH the k8sCommand worker and all worker pools.
+IMAGE_SETS=()
+if [ -n "$HF_ENGINE_IMAGE" ]; then
+    IMAGE_SETS+=(--set "hyperflow-engine.containers.hyperflow.image=$HF_ENGINE_IMAGE")
+fi
+if [ -n "$WORKER_IMAGE" ]; then
+    IMAGE_SETS+=(--set "hyperflow-engine.containers.worker.image=$WORKER_IMAGE")
+    IMAGE_SETS+=(--set "workerPools.workerPoolDefaults.image=$WORKER_IMAGE")
+fi
+if [ -n "$DATA_IMAGE" ]; then
+    IMAGE_SETS+=(--set "hyperflow-nfs-data.workflow.image=$DATA_IMAGE")
+fi
+
 helm upgrade --install hf-run charts/hyperflow-run \
     --dependency-update \
     -f local/values-fast-test-run.yaml \
-    --set hyperflow-engine.containers.hyperflow.image="$HF_ENGINE_IMAGE" \
-    --set hyperflow-engine.containers.worker.image="$WORKER_IMAGE" \
-    --set hyperflow-nfs-data.workflow.image="$DATA_IMAGE" \
+    "${WORKFLOW_VALUES[@]}" \
+    "${IMAGE_SETS[@]}" \
     --set hyperflow-engine.containers.hyperflow.autoRun="$AUTO_RUN" \
     $ADMISSION_FLAGS \
     --wait \

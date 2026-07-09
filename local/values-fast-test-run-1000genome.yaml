@@ -1,0 +1,49 @@
+# 1000genome worker-pool overlay for fast-test.sh (WORKFLOW=1000genome).
+#
+# Applied on top of values-fast-test-run.yaml; it only replaces the pool list.
+# Everything else (resourceQuota, workerPoolDefaults, engine config, NFS data)
+# is inherited from the base file. The pool image and data/engine images come
+# from WORKER_IMAGE/HF_ENGINE_IMAGE (see the WORKFLOW=1000genome profile in
+# fast-test.sh) or the chart defaults.
+#
+# taskType values must match the process names in the 1000genome workflow.json
+# (individuals, individuals_merge, sifting, mutation_overlap, frequency). Pools
+# for task types the workflow routes via k8sCommand simply stay scaled to 0 —
+# harmless — so defining all five is safe regardless of the workflow's
+# executionModels config.
+# The 1000genome data image ships compressed VCFs under /data/20130502/, but the
+# workflow's task scripts all open bare, CWD-relative paths from /work_dir:
+#   - individuals/sifting: the VCF by name (args like "ALL.chr1.250000.vcf")
+#   - individuals/mutation_overlap/frequency: "columns.txt" (data_dir = './')
+#   - mutation_overlap/frequency: population files by name (pop_dir = './')
+# The default montage staging just copies /data/* verbatim (leaving them .gz and
+# nested), so override it to decompress the VCFs and flatten the VCFs, columns.txt
+# and the population files into /work_dir.
+hyperflow-nfs-data:
+  workflow:
+    command:
+      - "/bin/sh"
+      - "-c"
+      - >
+        echo "Staging 1000genome data (decompress + flatten)..." ;
+        cp -rv /data/* /workflow-data ;
+        cd /workflow-data/20130502 ;
+        for f in *.vcf.gz; do gunzip -kf "$f"; done ;
+        cp /workflow-data/20130502/*.vcf /workflow-data/ ;
+        cp /workflow-data/20130502/columns.txt /workflow-data/ ;
+        cp /workflow-data/populations/* /workflow-data/ ;
+        sed -i 's/exit/noop/g' /workflow-data/workflow.json ;
+        echo "1000genome data staged." ;
+
+workerPools:
+  pools:
+    - name: individuals
+      taskType: individuals
+    - name: individuals-merge
+      taskType: individuals_merge
+    - name: sifting
+      taskType: sifting
+    - name: mutation-overlap
+      taskType: mutation_overlap
+    - name: frequency
+      taskType: frequency

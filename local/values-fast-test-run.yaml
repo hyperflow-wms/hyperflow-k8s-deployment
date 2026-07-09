@@ -14,6 +14,8 @@ wf-input-data-from-docker: &input-from-docker true
 workerPools:
   enabled: &wfpoolsenabled true
   workerPoolDefaults:
+    # Pool image comes from the chart default (charts/hyperflow-run/values.yaml)
+    # or is overridden by WORKER_IMAGE via fast-test.sh (--set covers pools too).
     rabbitHostname: &rabbithostname rabbitmq.default
     redisUrl: redis://redis:6379
     minReplicaCount: 0
@@ -21,10 +23,18 @@ workerPools:
     initialResources:
       requests:
         cpu: "0.2"  # Reduced for local testing
-        memory: "128Mi"  # Reduced for local testing
+        # Raw bytes (128Mi), NOT "128Mi" - the operator inlines this value
+        # directly into a PromQL expression (kube_resourcequota{...} /
+        # {memoryLimits}) for the pool's scaling-ceiling calculation, and
+        # PromQL doesn't understand Kubernetes quantity suffixes ("Mi"/"Gi").
+        # A suffixed value here makes the operator's generated PrometheusRule
+        # fail admission ("bad number or duration syntax"), so no
+        # PrometheusRule/ScaledObject ever gets created for the pool. See
+        # charts/hyperflow-run/values.yaml, which uses the same raw-byte style.
+        memory: "134217728"  # Reduced for local testing
       limits:
         cpu: "0.5"
-        memory: "256Mi"
+        memory: "268435456"
   pools:
     - name: mproject
       taskType: mProject
@@ -115,6 +125,10 @@ hyperflow-engine:
       additionalVariables:
         - name: NODE_OPTIONS
           value: "--max-old-space-size=1536"  # 1.5GB heap (~75% of 2GB container limit)
+        # Completion-notification transport: "stream" (Redis Streams) or "set" (legacy).
+        # Requires the streams-dev worker image; stream engine + stock worker will hang.
+        - name: HF_VAR_COMPLETION_TRANSPORT
+          value: "stream"
       command:
         - "/bin/sh"
         - "-c"
