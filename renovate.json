@@ -1,0 +1,42 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommitsDisabled"
+  ],
+  "enabledManagers": [
+    "custom.regex"
+  ],
+  "labels": [
+    "dependencies",
+    "release-chain"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "HyperFlow engine image; in hyperflow-run this is a YAML anchor, so the *aliases follow automatically",
+      "fileMatch": [
+        "charts/hyperflow-run/values.yaml",
+        "charts/hyperflow-engine/values.yaml"
+      ],
+      "matchStrings": [
+        "(?<depName>hyperflowwms/hyperflow):(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Montage worker image; compatibility pins the Montage version so only the job-executor part moves",
+      "fileMatch": [
+        "charts/hyperflow-run/values.yaml"
+      ],
+      "matchStrings": [
+        "(?<depName>hyperflowwms/montage-worker):(?<currentValue>\\d+\\.\\d+-je\\d+\\.\\d+\\.\\d+)"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "regex:^(?<compatibility>\\d+\\.\\d+)-je(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    }
+  ]
+}
