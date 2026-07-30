@@ -129,6 +129,11 @@ hyperflow-engine:
         # Requires the streams-dev worker image; stream engine + stock worker will hang.
         - name: HF_VAR_COMPLETION_TRANSPORT
           value: "stream"
+        # The engine writes into a pipe, so it cannot detect a terminal itself.
+        # This colors the per-task lines for `kubectl logs`; drop it when the logs
+        # are collected by tooling that should not receive escape codes.
+        - name: FORCE_COLOR
+          value: "1"
       command:
         - "/bin/sh"
         - "-c"
