@@ -16,7 +16,7 @@
     {
       "customType": "regex",
       "description": "HyperFlow engine image; in hyperflow-run this is a YAML anchor, so the *aliases follow automatically",
-      "fileMatch": [
+      "managerFilePatterns": [
         "charts/hyperflow-run/values.yaml",
         "charts/hyperflow-engine/values.yaml"
       ],
@@ -29,7 +29,7 @@
     {
       "customType": "regex",
       "description": "Montage worker image; compatibility pins the Montage version so only the job-executor part moves",
-      "fileMatch": [
+      "managerFilePatterns": [
         "charts/hyperflow-run/values.yaml"
       ],
       "matchStrings": [
