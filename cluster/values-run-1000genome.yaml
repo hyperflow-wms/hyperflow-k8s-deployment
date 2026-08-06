@@ -1,0 +1,215 @@
+# hyperflow-run for the 1000genome capacity experiments on alice-k8s-datalake.
+#
+# Pod-per-task (k8sCommand) execution, which is the model the laptop Docker
+# harness measured. Worker pools are off.
+#
+# YAML anchors resolve per-file, so the chart's `wf-worker-image` /
+# `hf-engine-image` anchors cannot be overridden from here -- every image is set
+# on its concrete leaf key instead.
+
+workerPools:
+  enabled: false
+
+# Data is staged with `kubectl cp` from a prepared harness workflow directory
+# (about 46 MB of inputs for Q3), not from a data image: the experiments need
+# the exact Q1/Q3 workflow.json and region VCFs that the laptop runs used, and
+# `hyperflowwms/1000genome-data` ships the full unextracted 20130502 release.
+hyperflow-nfs-data:
+  enabled: false
+
+# The PVC named `nfs` is created by cluster/00-prereqs.yaml instead. This
+# subchart's template hardcodes `storageClassName: "nfs"`, which on this cluster
+# is nfs-ganesha and cannot serve the workflow -- see 00-prereqs.yaml for why the
+# claim names `nfs-xattr` instead.
+hyperflow-nfs-volume:
+  enabled: false
+
+redis:
+  nodeSelector:
+    hyperflow-wms/nodepool: hfmaster
+
+hyperflow-engine:
+  nodeSelector:
+    hyperflow-wms/nodepool: hfmaster
+
+  # A host LimitRange caps the CPU limit/request ratio at 4. The chart's stock
+  # requests (200m for the engine, 100m for hflow-tools) draw a defaulted 1-CPU
+  # limit and so present ratios of 5 and 10, and the pod is rejected outright.
+  # Both are therefore given explicit limits rather than inheriting the default.
+  #
+  # The limits are kept tight because the tenant quota counts limits.cpu, not
+  # requests: every core of limit here is a core the task pods cannot have.
+  resources:
+    requests:
+      cpu: 500m
+      memory: 500Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+  # The subchart keeps its own copy of this flag; the top-level one above does
+  # not reach it. Left true, the engine deployment carries a RABBIT_HOSTNAME
+  # pointing at a RabbitMQ that this deployment never installs.
+  workerPools:
+    enabled: false
+
+  # Replaces the chart list wholesale, dropping `worker-config`. That volume
+  # references a ConfigMap created only by templates/workerpools-cm.yml, which
+  # is gated on workerPools.enabled -- leaving it in place holds the engine pod
+  # in CreateContainerConfigError. Its absence is also what makes every task
+  # route through k8sCommand.
+  volumes:
+    - name: config-map
+      configMap:
+        name: hyperflow-config
+    - name: workflow-data
+      persistentVolumeClaim:
+        claimName: nfs
+
+  containers:
+    # Idles until the run finishes, then renders the trace. Sized only to stay
+    # inside the limit/request ratio rule described above.
+    tools:
+      image: hyperflowwms/hflow-tools:v1.3.1
+      resources:
+        requests:
+          cpu: 250m
+          memory: 250Mi
+        limits:
+          cpu: 500m
+          memory: 500Mi
+
+    hyperflow:
+      image: hyperflowwms/hyperflow:v1.11.1
+      # Redis Streams completion transport; required by job-executor >= 1.4.0,
+      # which the worker image carries. The chart default ("") leaves the engine
+      # on the legacy "set" transport and tasks then never complete.
+      completionTransport: stream
+      # Matching volumeMounts, minus the worker-config mount.
+      volumeMounts:
+        - name: workflow-data
+          mountPath: "/work_dir"
+        - name: config-map
+          mountPath: /opt/hyperflow/job-template.yaml
+          subPath: job-template.yaml
+          readOnly: true
+
+    worker:
+      image: hyperflowwms/1000genome-worker:1.5-je1.4.2
+      additionalVariables:
+        # Left at "1" on purpose: the engine then parks in an idle loop instead
+        # of running the workflow on startup. Each measured run is started by
+        # hand (`hflow run workflow.json`) after the workflow directory has been
+        # staged, which is the Kubernetes equivalent of the harness's
+        # --execute-only and lets the same deployment serve every sweep point.
+        - name: HF_VAR_DEBUG
+          value: "1"
+        # One core per task. The analysis workers are single-threaded Python, so
+        # a whole-core request means the scheduler never places two tasks on one
+        # core -- the condition the laptop measurements could not satisfy. There
+        # are no CPU limits in the job template, only requests, so this governs
+        # placement rather than throttling.
+        - name: HF_VAR_CPU_REQUEST
+          value: "1"
+        # A host LimitRange caps every container at 1Gi, and a larger request is
+        # rejected outright rather than merely unscheduled. This bounds how
+        # coarsely the individuals stage may be split: J must stay high enough
+        # that no single task exceeds it.
+        - name: HF_VAR_MEM_REQUEST
+          value: "1Gi"
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=4096"
+
+  configMap:
+    data:
+      job-template.yaml: |-
+            apiVersion: batch/v1
+            kind: Job
+            metadata:
+              name: job${jobName}
+            spec:
+              ttlSecondsAfterFinished: 100
+              template:
+                metadata:
+                  labels:
+                    app: hyperflow
+                spec:
+                  restartPolicy: Never
+                  # Added relative to the chart default. The ResourceQuota this
+                  # deployment relies on is scoped to this PriorityClass; the
+                  # stock pod-per-task template carries none, so worker pods fall
+                  # outside the quota's scope and it constrains nothing.
+                  priorityClassName: hyperflow-worker
+                  containers:
+                  - name: test
+                    image: ${containerName}
+                    env:
+                      - name: HF_VAR_WORK_DIR
+                        value: "${workingDirPath}"
+                      - name: HF_VAR_WAIT_FOR_INPUT_FILES
+                        value: "0"
+                      - name: HF_VAR_NUM_RETRIES
+                        value: "1"
+                      - name: HF_VAR_ENABLE_TRACING
+                        value: "${enableTracing}"
+                      - name: HF_VAR_ENABLE_OTEL
+                        value: "${enableOtel}"
+                      - name: HF_VAR_OT_PARENT_ID
+                        value: "${optParentId}"
+                      - name: HF_VAR_OT_TRACE_ID
+                        value: "${optTraceId}"
+                      # Per-task timing comes out of the job executor's own logs
+                      # under ${workingDirPath}/logs-hf, the same files the
+                      # laptop calibration was fitted from. The node name is
+                      # recorded so a run can be checked for co-tenancy.
+                      - name: HF_LOG_NODE_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: spec.nodeName
+                      - name: HF_LOG_POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: HF_LOG_POD_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.namespace
+                      - name: HF_LOG_POD_IP
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: status.podIP
+                      - name: HF_LOG_POD_SERVICE_ACCOUNT
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: spec.serviceAccountName
+                      - name: HF_VAR_FS_MONIT_ENABLED
+                        value: "0"
+                      - name: HF_VAR_FS_MONIT_COMMAND
+                        value: '${command}'
+                      - name: HF_VAR_FS_MONIT_PATH_PATTERN
+                        value: "${workingDirPath}/*"
+                    command:
+                      - "/bin/sh"
+                      - "-c"
+                      - >
+                        if [ $HF_VAR_FS_MONIT_ENABLED -eq 1 ];
+                        then export LD_PRELOAD=/fbam/libfbam.so ;
+                            export HF_VAR_FS_MONIT_LOGFILE="${workingDirPath}/logs-hf/file_access_log_$(echo "${command}" | tr ./: "_" | cut -d' ' -f2).jsonl" ;
+                            touch $HF_VAR_FS_MONIT_LOGFILE ;
+                        fi ;
+                        ${command}; exitCode=$? ;
+                        if [ $exitCode -ne 0 ]; then echo "Command ${command} returned exit code. $exitCode. Job fails." ; exit 1 ; fi ;
+                    workingDir: ${workingDirPath}
+                    resources:
+                      requests:
+                        cpu: ${cpuRequest}
+                        memory: ${memRequest}
+                    volumeMounts:
+                    - name: my-pvc-nfs
+                      mountPath: ${volumePath}
+                  nodeSelector:
+                    hyperflow-wms/nodepool: hfworker
+                  volumes:
+                  - name: my-pvc-nfs
+                    persistentVolumeClaim:
+                      claimName: nfs
