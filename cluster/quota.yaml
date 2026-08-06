@@ -1,0 +1,30 @@
+# Worker ResourceQuota, applied separately from the chart.
+#
+# The chart's own templates/resourcequota.yml is gated on workerPools.enabled,
+# so it renders nothing in the pod-per-task deployment used here. The object
+# below is what that template would produce, and it is scoped to the same
+# PriorityClass -- which the job template in values-run-1000genome.yaml sets on
+# worker pods so that the scope actually matches something.
+#
+# Sizing: requests.cpu = slots x HF_VAR_CPU_REQUEST. At one core per task,
+# the quota's CPU figure and the plan's slot count are the same number.
+#
+# Read docs/CLUSTER-CAPACITY-NOTES.md in the 1000genome repo before using this
+# as the dial for a capacity sweep: a quota rejects pod creation rather than
+# queueing it, and the Job controller's retry backoff then shows up in the
+# makespan.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: hflow-requests
+  namespace: hyperflow
+spec:
+  hard:
+    requests.cpu: "14"
+    requests.memory: 28Gi
+  scopeSelector:
+    matchExpressions:
+      - scopeName: PriorityClass
+        operator: In
+        values:
+          - hyperflow-worker

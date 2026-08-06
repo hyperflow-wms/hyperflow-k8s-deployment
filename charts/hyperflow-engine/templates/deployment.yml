@@ -115,17 +115,12 @@ spec:
           {{- with .Values.containers.hyperflow.volumeMounts }}
           volumeMounts: {{ . | toYaml | nindent 10}}
           {{- end }}
-          resources:
-            requests:
-              cpu: 200m
-              memory: 100Mi
         - name: hflow-tools
           image: {{ .Values.containers.tools.image }}
           imagePullPolicy: Always
-          resources:
-            requests:
-              cpu: 100m
-              memory: 100Mi
+          {{- with .Values.containers.tools.resources }}
+          resources: {{ . | toYaml | nindent 12 }}
+          {{- end }}
           command:
             - "sh"
             - "-c"

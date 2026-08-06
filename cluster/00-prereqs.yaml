@@ -1,0 +1,65 @@
+# Cluster prerequisites for the alice-k8s-datalake vcluster.
+#
+# No NFS provisioner and no static PersistentVolume. The host's default storage
+# class already serves ReadWriteMany, so the shared workflow volume is claimed
+# from it directly. That is not just simpler than running the ganesha
+# provisioner from the hyperflow-ops chart -- the provisioner cannot run here at
+# all: it needs the DAC_READ_SEARCH and SYS_RESOURCE capabilities, and the host
+# namespace enforces the "baseline" Pod Security Standard, which rejects any pod
+# adding non-default capabilities.
+#
+# Node labels are applied separately (see deploy.sh). They are cosmetic on this
+# cluster: nodeSelector is not enforced through the vcluster syncer, so the host
+# scheduler places every pod wherever it likes regardless.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hyperflow
+---
+# The shared workflow directory, mounted at /work_dir by the engine and by every
+# task pod. Named `nfs` because that is the claim name the hyperflow-engine
+# chart's volumes refer to.
+#
+# `nfs-xattr` is kernel nfsd on the ZFS node. Host-side classes do not appear in
+# `kubectl get sc` -- the vcluster does not sync them -- but naming one works,
+# and the claim binds in about 30 seconds.
+#
+# It must be `nfs-xattr`, not `nfs`. The `nfs` class is nfs-ganesha 4.0.8, whose
+# chunked readdir assumes directory cookies stay valid across calls; concurrent
+# writes invalidate them and the server returns an I/O error. Enumerating a
+# directory while anything writes to it then fails intermittently with
+# EREMOTEIO, which is exactly what `individuals.py` does -- write ~2500 files,
+# then `tarfile.add` the directory. Measured on the same reproducer: `nfs` 0/60,
+# `nfs-xattr` 60/60. Kernel nfsd does not share that implementation, and it also
+# serves xattrs (NFSv4.2 / RFC 8276).
+#
+# Do not fall back to omitting storageClassName either. That picks up the host
+# default `cinder-perf`, which reports RWX on the PV and does not deliver it: it
+# is block storage, so a second pod mounting it lands on another node with no
+# shared filesystem underneath.
+#
+# 8Gi covers a Q1 run (~3.5GB of output); Q3 needs about 1.2GB.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs
+  namespace: hyperflow
+spec:
+  storageClassName: nfs-xattr
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 8Gi
+---
+# The hyperflow-run chart scopes its ResourceQuota to this PriorityClass. The
+# class normally ships with the worker-pool-operator chart, which this
+# deployment does not install, so it is created here.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: hyperflow-worker
+value: 0
+globalDefault: false
+description: Worker pods for HyperFlow tasks; scopes the hflow-requests quota.
