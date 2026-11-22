@@ -1,0 +1,58 @@
+# What a Montage test run in namespace hyperflow-devel needs besides the
+# hyperflow-run manifests (cluster/values-run-montage.yaml): the shared
+# workflow volume, and the right for the engine to create Jobs. The pod
+# quota a run also needs is described in the header of that file.
+#
+# The namespace itself is the owner's and is not created or deleted here.
+---
+# The shared workflow directory, mounted at /work_dir by the engine and by
+# every task pod. Named `nfs` because the engine chart and the job template
+# refer to that claim name. The storage class must be nfs-xattr, not nfs or
+# the default; cluster/00-prereqs.yaml explains why. Host-side classes do not
+# appear in `kubectl get sc`, but naming one works.
+#
+# Montage 2 at 0.25 degrees reads 135 MB of input, and a run directory
+# grows to about 1.4 GB; 10Gi holds the input and a few runs.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs
+  namespace: hyperflow-devel
+spec:
+  storageClassName: nfs-xattr
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+---
+# The engine runs as the namespace's default service account and creates one
+# Job per task in its own namespace. This Role lets it create and read Jobs,
+# within hyperflow-devel only. With it, the hyperflow-engine chart's
+# ClusterRoleBinding, which gives cluster-admin to every service account in
+# the cluster, is not needed: install the release with a Helm post-renderer
+# that removes that binding (see the header of
+# cluster/values-run-montage.yaml).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hyperflow-engine-jobs
+  namespace: hyperflow-devel
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hyperflow-engine-jobs
+  namespace: hyperflow-devel
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: hyperflow-engine-jobs
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: hyperflow-devel

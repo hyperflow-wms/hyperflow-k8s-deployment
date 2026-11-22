@@ -1,0 +1,270 @@
+# hyperflow-run for a Montage test run on alice-k8s-datalake, in namespace
+# hyperflow-devel. alice-k8s-datalake is a vcluster: its pods run on a shared
+# host cluster, whose rules (LimitRange, 400 pod objects, scheduler) apply.
+#
+# The workflow is Montage 2 at 0.25 degrees in three bands: 619 tasks
+# (90 mProject, 423 mDiffFit, 3 mConcatFit, 3 mBgModel, 90 mBackground,
+# 3 mImgtbl, 3 mAdd, 4 mViewer), ending in four JPEG mosaics. Its worker
+# image is montage-worker:6.0-je1.4.2, built on Montage 6.0. It is meant for
+# checking an engine image end to end, not for measurements.
+#
+# Every task runs as its own Job (k8sCommand); worker pools are off. The
+# engine has no limit of its own on concurrent Jobs, and up to 423 mDiffFit
+# tasks become ready together, while the host allows 400 pod objects in
+# total, shared with other projects. Create a ResourceQuota before a run and
+# delete it afterwards. `pods` bounds the pods that have not finished;
+# `count/pods` bounds all pod objects, finished ones included, which the
+# host's limit counts until the 5 s TTL deletes their Job:
+#
+#   kubectl create quota montage-pods -n hyperflow-devel --hard=pods=100,count/pods=200
+#
+# Install with Helm 3 from the repository root, after
+# cluster/montage-devel-prereqs.yaml is applied. The subchart archives are
+# not in git, so build them from source first:
+#
+#   helm dependency build charts/hyperflow-run
+#   helm install hf-montage charts/hyperflow-run -n hyperflow-devel \
+#     -f cluster/values-run-montage.yaml \
+#     --post-renderer cluster/drop-cluster-role-binding.py \
+#     --wait --wait-for-jobs --timeout 15m
+#
+# The post-renderer removes the hyperflow-engine subchart's
+# ClusterRoleBinding, which gives cluster-admin to every service account in
+# the cluster; the Role in the prerequisites gives the engine what it needs.
+#
+# The engine idles on start (HF_VAR_DEBUG=1), and each run is started by hand
+# in a new copy of the input, so one release serves several runs; hflow runs
+# in the foreground of the exec session:
+#
+#   kubectl exec -n hyperflow-devel deploy/hyperflow-engine -c hyperflow -- \
+#     sh -c 'mkdir /work_dir/run1 && cp -r /work_dir/montage2/. /work_dir/run1/ && cd /work_dir/run1 && hflow run workflow.json'
+#
+# Cleanup, in this order. Task Jobs are not part of the release, and ones the
+# quota still holds back would start pods once it is gone:
+#
+#   helm uninstall hf-montage -n hyperflow-devel
+#   kubectl delete jobs --all -n hyperflow-devel --wait
+#   kubectl delete -f cluster/montage-devel-prereqs.yaml
+#   kubectl delete quota montage-pods -n hyperflow-devel
+#
+# The completion transport is the chart's default (the engine's "set"). For
+# the Redis Streams transport add
+#   --set hyperflow-engine.containers.hyperflow.completionTransport=stream
+# The value must be exactly "stream": the engine treats any other value,
+# "streams" included, as "set".
+#
+# YAML anchors resolve per file, so the chart's `wf-worker-image` and
+# `hf-engine-image` anchors cannot be overridden from here; every image is set
+# on its leaf key. Helm merges maps key by key; a node selector inherited
+# from the chart is removed by setting the whole map to null (setting only
+# its key to null leaves "key: null" in the rendered subchart).
+
+workerPools:
+  enabled: false
+
+# The chart's data Job copies the input onto the volume when the release is
+# installed, into /work_dir/montage2 rather than the volume's root, so that
+# each run can work in its own copy: the engine runs tasks in the directory
+# that holds workflow.json. The sed is the chart's own; this workflow has no
+# `exit` task, so it leaves workflow.json unchanged (sha256 d1e51bf3...).
+hyperflow-nfs-data:
+  enabled: true
+  workflow:
+    image: hyperflowwms/montage2-workflow-data:montage2-2mass-025-latest@sha256:bf210da91b9019032d435a366e906e21011d2b562ce1c57d5be865fa7639517e
+    command:
+      - /bin/sh
+      - -c
+      - >
+        mkdir -p /workflow-data/montage2 &&
+        cp -r /data/* /workflow-data/montage2/ &&
+        sed -i 's/exit/noop/g' /workflow-data/montage2/workflow.json &&
+        ls -la /workflow-data/montage2
+  # The Job template also sets its own requests (250m, 64Mi), which take
+  # precedence; these values match them.
+  resources:
+    requests:
+      cpu: 250m
+      memory: 64Mi
+  nodeSelector: null
+
+# The claim named `nfs` is created by cluster/montage-devel-prereqs.yaml with
+# storage class nfs-xattr. This subchart hardcodes `storageClassName: "nfs"`
+# (nfs-ganesha on this cluster); see cluster/00-prereqs.yaml for why that
+# class fails under concurrent writes.
+hyperflow-nfs-volume:
+  enabled: false
+
+# No node on this cluster carries a hyperflow-wms/nodepool label, so no pod
+# gets that selector; the host scheduler places them.
+redis:
+  nodeSelector: null
+
+hyperflow-engine:
+  nodeSelector: null
+
+  # A host LimitRange caps the CPU limit/request ratio at 4 and every
+  # container at 1Gi of memory; containers without limits get a default
+  # 1-CPU limit. Explicit limits keep both containers inside those rules.
+  resources:
+    requests:
+      cpu: 500m
+      memory: 500Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+  # The subchart keeps its own copy of this flag. Left true, the engine gets
+  # a RABBIT_HOSTNAME for a RabbitMQ this deployment does not install.
+  workerPools:
+    enabled: false
+
+  # Replaces the chart's list, dropping `worker-config`: that ConfigMap
+  # exists only with worker pools enabled.
+  volumes:
+    - name: config-map
+      configMap:
+        name: hyperflow-config
+    - name: workflow-data
+      persistentVolumeClaim:
+        claimName: nfs
+
+  containers:
+    tools:
+      image: hyperflowwms/hflow-tools:v1.3.1@sha256:a3493e81a7aa552f74f871e6c068c8bfe870771e47ea438ad23c8e60a055bce2
+      resources:
+        requests:
+          cpu: 250m
+          memory: 250Mi
+        limits:
+          cpu: 500m
+          memory: 500Mi
+
+    hyperflow:
+      image: hyperflowwms/hyperflow:v1.11.2@sha256:079a491f155bc64752ac54419550bfc61c354c180d5dc2295612517798c9a710
+      # Empty: the engine's default "set" transport. See the header for
+      # "stream".
+      completionTransport: ""
+      # The chart's mounts minus the worker-config mount.
+      volumeMounts:
+        - name: workflow-data
+          mountPath: "/work_dir"
+        - name: config-map
+          mountPath: /opt/hyperflow/job-template.yaml
+          subPath: job-template.yaml
+          readOnly: true
+
+    worker:
+      # Montage 6.0 tools and @hyperflow/job-executor 1.4.2, which reports
+      # completion over either transport, as the engine asks in the job
+      # message.
+      image: hyperflowwms/montage-worker:6.0-je1.4.2@sha256:637cd90db3662b7366b00ed4684e40b762ab711aa068626ce09f22521f9c1517
+      # The engine container gets these variables (the chart's naming).
+      # Replaces the chart's list, dropping the standalone autoscaler's
+      # address and PORT.
+      additionalVariables:
+        # The engine idles instead of running the workflow on start.
+        - name: HF_VAR_DEBUG
+          value: "1"
+        # Each task pod's requests; the job template below sets the limits.
+        - name: HF_VAR_CPU_REQUEST
+          value: "0.1"
+        - name: HF_VAR_MEM_REQUEST
+          value: "256Mi"
+        # Below the container's 1Gi limit.
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=768"
+
+  # The chart's job template with these changes:
+  # - backoffLimit from the engine (HF_VAR_BACKOFF_LIMIT, 0 in the chart), so
+  #   Kubernetes does not run a failed task again behind the engine's back;
+  # - finished Jobs, and their pods, deleted 5 s after they end: the host
+  #   counts finished pods against its limit of 400 pod objects;
+  # - explicit limits of 400m CPU (4 times the request, the host's largest
+  #   ratio) and 1Gi of memory, so 100 task pods hold 40 CPU of limits;
+  # - no hyperflow-wms/nodepool node selector and no unused emptyDir volume.
+  configMap:
+    data:
+      job-template.yaml: |-
+            apiVersion: batch/v1
+            kind: Job
+            metadata:
+              name: job${jobName}
+            spec:
+              backoffLimit: ${backoffLimit}
+              ttlSecondsAfterFinished: 5
+              template:
+                metadata:
+                  labels:
+                    app: hyperflow
+                spec:
+                  restartPolicy: Never
+                  containers:
+                  - name: test
+                    image: ${containerName}
+                    env:
+                      - name: HF_VAR_WORK_DIR
+                        value: "${workingDirPath}"
+                      - name: HF_VAR_WAIT_FOR_INPUT_FILES
+                        value: "0"
+                      - name: HF_VAR_NUM_RETRIES
+                        value: "1"
+                      - name: HF_VAR_ENABLE_TRACING
+                        value: "${enableTracing}"
+                      - name: HF_VAR_ENABLE_OTEL
+                        value: "${enableOtel}"
+                      - name: HF_VAR_OT_PARENT_ID
+                        value: "${optParentId}"
+                      - name: HF_VAR_OT_TRACE_ID
+                        value: "${optTraceId}"
+                      - name: HF_LOG_NODE_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: spec.nodeName
+                      - name: HF_LOG_POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: HF_LOG_POD_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.namespace
+                      - name: HF_LOG_POD_IP
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: status.podIP
+                      - name: HF_LOG_POD_SERVICE_ACCOUNT
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: spec.serviceAccountName
+                      - name: HF_VAR_FS_MONIT_ENABLED
+                        value: "0"
+                      - name: HF_VAR_FS_MONIT_COMMAND
+                        value: '${command}'
+                      - name: HF_VAR_FS_MONIT_PATH_PATTERN
+                        value: "${workingDirPath}/*"
+                    command:
+                      - "/bin/sh"
+                      - "-c"
+                      - >
+                        if [ $HF_VAR_FS_MONIT_ENABLED -eq 1 ];
+                        then export LD_PRELOAD=/fbam/libfbam.so ;
+                            export HF_VAR_FS_MONIT_LOGFILE="${workingDirPath}/logs-hf/file_access_log_$(echo "${command}" | tr ./: "_" | cut -d' ' -f2).jsonl" ;
+                            touch $HF_VAR_FS_MONIT_LOGFILE ;
+                        fi ;
+                        ${command}; exitCode=$? ;
+                        if [ $exitCode -ne 0 ]; then echo "Command ${command} returned exit code. $exitCode. Job fails." ; exit 1 ; fi ;
+                    workingDir: ${workingDirPath}
+                    resources:
+                      requests:
+                        cpu: ${cpuRequest}
+                        memory: ${memRequest}
+                      limits:
+                        cpu: 400m
+                        memory: 1Gi
+                    volumeMounts:
+                    - name: my-pvc-nfs
+                      mountPath: ${volumePath}
+                  volumes:
+                  - name: my-pvc-nfs
+                    persistentVolumeClaim:
+                      claimName: nfs
