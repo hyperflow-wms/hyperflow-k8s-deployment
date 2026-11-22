@@ -1,5 +1,6 @@
 # hyperflow-run for a Montage test run on alice-k8s-datalake, in namespace
-# hyperflow-devel.
+# hyperflow-devel. alice-k8s-datalake is a vcluster: its pods run on a shared
+# host cluster, whose rules (LimitRange, 400 pod objects, scheduler) apply.
 #
 # The workflow is Montage 2 at 0.25 degrees in three bands: 619 tasks
 # (90 mProject, 423 mDiffFit, 3 mConcatFit, 3 mBgModel, 90 mBackground,
@@ -10,10 +11,12 @@
 # Every task runs as its own Job (k8sCommand); worker pools are off. The
 # engine has no limit of its own on concurrent Jobs, and up to 423 mDiffFit
 # tasks become ready together, while the host allows 400 pod objects in
-# total, shared with other projects. A ResourceQuota on pods bounds how many
-# task pods exist at once; create it before a run and delete it afterwards:
+# total, shared with other projects. Create a ResourceQuota before a run and
+# delete it afterwards. `pods` bounds the pods that have not finished;
+# `count/pods` bounds all pod objects, finished ones included, which the
+# host's limit counts until the 5 s TTL deletes their Job:
 #
-#   kubectl create quota montage-pods -n hyperflow-devel --hard=pods=100
+#   kubectl create quota montage-pods -n hyperflow-devel --hard=pods=100,count/pods=200
 #
 # Install with Helm 3 from the repository root, after
 # cluster/montage-devel-prereqs.yaml is applied. The subchart archives are
@@ -21,26 +24,28 @@
 #
 #   helm dependency build charts/hyperflow-run
 #   helm install hf-montage charts/hyperflow-run -n hyperflow-devel \
-#     -f cluster/values-run-montage.yaml --post-renderer <script> \
+#     -f cluster/values-run-montage.yaml \
+#     --post-renderer cluster/drop-cluster-role-binding.py \
 #     --wait --wait-for-jobs --timeout 15m
 #
-# The hyperflow-engine subchart renders a ClusterRoleBinding that gives
-# cluster-admin to every service account in the cluster. The Role in the
-# prerequisites gives the engine what it needs, so pass as <script> an
-# executable that reads the manifests on stdin and prints them without the
-# ClusterRoleBinding document; without it, the release creates the binding.
+# The post-renderer removes the hyperflow-engine subchart's
+# ClusterRoleBinding, which gives cluster-admin to every service account in
+# the cluster; the Role in the prerequisites gives the engine what it needs.
 #
 # The engine idles on start (HF_VAR_DEBUG=1), and each run is started by hand
-# in a new copy of the input, so one release serves several runs. The run
-# directory must not exist yet, or cp -r copies the input into it; hflow runs
+# in a new copy of the input, so one release serves several runs; hflow runs
 # in the foreground of the exec session:
 #
 #   kubectl exec -n hyperflow-devel deploy/hyperflow-engine -c hyperflow -- \
-#     sh -c 'cp -r /work_dir/montage2 /work_dir/run1 && cd /work_dir/run1 && hflow run workflow.json'
+#     sh -c 'mkdir /work_dir/run1 && cp -r /work_dir/montage2/. /work_dir/run1/ && cd /work_dir/run1 && hflow run workflow.json'
 #
-# Cleanup: `helm uninstall hf-montage -n hyperflow-devel`, `kubectl delete -f
-# cluster/montage-devel-prereqs.yaml` and `kubectl delete quota montage-pods
-# -n hyperflow-devel`. Finished task Jobs delete themselves.
+# Cleanup, in this order. Task Jobs are not part of the release, and ones the
+# quota still holds back would start pods once it is gone:
+#
+#   helm uninstall hf-montage -n hyperflow-devel
+#   kubectl delete jobs --all -n hyperflow-devel --wait
+#   kubectl delete -f cluster/montage-devel-prereqs.yaml
+#   kubectl delete quota montage-pods -n hyperflow-devel
 #
 # The completion transport is the chart's default (the engine's "set"). For
 # the Redis Streams transport add
@@ -114,8 +119,7 @@ hyperflow-engine:
     enabled: false
 
   # Replaces the chart's list, dropping `worker-config`: that ConfigMap
-  # exists only with worker pools enabled, and without it every task runs
-  # as its own Job.
+  # exists only with worker pools enabled.
   volumes:
     - name: config-map
       configMap:
@@ -126,7 +130,7 @@ hyperflow-engine:
 
   containers:
     tools:
-      image: hyperflowwms/hflow-tools:v1.3.1
+      image: hyperflowwms/hflow-tools:v1.3.1@sha256:a3493e81a7aa552f74f871e6c068c8bfe870771e47ea438ad23c8e60a055bce2
       resources:
         requests:
           cpu: 250m
