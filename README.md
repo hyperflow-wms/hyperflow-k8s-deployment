@@ -117,11 +117,11 @@ To run a sample workflow on a clean Kubernetes cluster, you should do the follow
 ```
 - Install the `hyperflow-ops` chart 
 ```
-helm upgrade --dependency-update -i hf-ops hyperflow-ops
+helm upgrade --dependency-update -i hf-ops charts/hyperflow-ops
 ```
 - Install the `hyperflow-run` chart (prefarably in a separate namespace)
 ```
-helm upgrade --dependency-update -i hf-run-montage hyperflow-run
+helm upgrade --dependency-update -i hf-run-montage charts/hyperflow-run
 ```
 
 #### Local subcharts and stale vendored archives

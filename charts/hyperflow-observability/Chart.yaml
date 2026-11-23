@@ -1,0 +1,20 @@
+apiVersion: v2
+name: hyperflow-observability
+description: Helm chart to deploy observability stack
+type: application
+version: 0.1.0
+appVersion: "1.0"
+
+dependencies:
+  - name: opensearch
+    version: "2.34.0"
+    repository: https://opensearch-project.github.io/helm-charts/
+  - name: opensearch-dashboards
+    version: "2.30.0"
+    repository: https://opensearch-project.github.io/helm-charts/
+  - name: data-prepper
+    version: "0.3.1"
+    repository: https://opensearch-project.github.io/helm-charts/
+  - name: opentelemetry-collector
+    version: "0.126.0"
+    repository: https://open-telemetry.github.io/opentelemetry-helm-charts
