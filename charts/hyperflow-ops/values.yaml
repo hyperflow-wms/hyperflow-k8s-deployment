@@ -1,3 +1,7 @@
+# This is needed to start keda on address other than cluster.local
+# global:
+#   clusterDomain: #provide cluster address
+
 worker-pools:
   enabled: false # Set to true if using worker pools execution model
   enable-prometheus-adapter: &enable-prometheus-adapter true
@@ -53,6 +57,9 @@ hyperflow-worker-pool-operator:
       username: guest
       password: guest
       erlangCookie: jiwng4pw7NJL3KutMb4pF7k6C5RphXYU
+    # extraEnvVars: #change if cluster domain is different from cluster.local
+    #   - name: RABBITMQ_NODE_NAME
+    #     value: "rabbit@$(MY_POD_NAME).rabbitmq-headless.$(MY_POD_NAMESPACE).svc.cluster.local"
 
   kube-prometheus-stack:
     enabled: *enable-kube-prometheus-stack
