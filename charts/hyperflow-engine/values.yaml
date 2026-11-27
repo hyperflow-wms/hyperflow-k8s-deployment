@@ -10,7 +10,7 @@ volumes:
 
 containers:
   hyperflow:
-    image: hyperflowwms/hyperflow:v1.11.1
+    image: hyperflowwms/hyperflow:v1.11.3
     port: 8080
     completionTransport: ""
     runAsServer: false
